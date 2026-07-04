@@ -14,6 +14,9 @@ type LoginPageProps = {
 
 const errorMessages: Record<string, string> = {
   "auth-callback": "We could not finish that authentication link. Please sign in again.",
+  "auth-failed": "Authentication failed. Check the Supabase settings and try again.",
+  "database-setup": "Supabase is connected, but the database schema has not been installed correctly.",
+  "invalid-credentials": "The email or password is incorrect.",
   "supabase-missing": "Supabase is not configured for this deployment yet."
 };
 

@@ -14,6 +14,24 @@ import { hasRole } from "@/lib/permissions";
 import { getAbsoluteUrl } from "@/lib/url";
 import type { FieldDefinition, ModuleKey } from "@/types/app";
 
+function authErrorCode(message?: string) {
+  const normalized = message?.toLowerCase() ?? "";
+
+  if (normalized.includes("already registered") || normalized.includes("already exists")) {
+    return "email-exists";
+  }
+
+  if (normalized.includes("invalid login") || normalized.includes("invalid credentials")) {
+    return "invalid-credentials";
+  }
+
+  if (normalized.includes("database")) {
+    return "database-setup";
+  }
+
+  return "auth-failed";
+}
+
 function formString(formData: FormData, name: string) {
   const value = formData.get(name);
   return typeof value === "string" ? value.trim() : "";
@@ -165,16 +183,22 @@ async function uploadFieldFiles({
 
 export async function signInAction(formData: FormData) {
   if (!isSupabaseConfigured()) {
-    throw new Error("Supabase is not configured. Add .env.local values before signing in.");
+    redirect("/login?error=supabase-missing");
   }
 
   const email = formString(formData, "email");
   const password = formString(formData, "password");
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  let signInResult: Awaited<ReturnType<typeof supabase.auth.signInWithPassword>>;
 
-  if (error) {
-    throw new Error(error.message);
+  try {
+    signInResult = await supabase.auth.signInWithPassword({ email, password });
+  } catch {
+    redirect("/login?error=auth-failed");
+  }
+
+  if (signInResult.error) {
+    redirect(`/login?error=${authErrorCode(signInResult.error.message)}`);
   }
 
   redirect("/dashboard");
@@ -182,7 +206,7 @@ export async function signInAction(formData: FormData) {
 
 export async function signUpAction(formData: FormData) {
   if (!isSupabaseConfigured()) {
-    throw new Error("Supabase is not configured. Add .env.local values before signing up.");
+    redirect("/signup?error=supabase-missing");
   }
 
   const email = formString(formData, "email");
@@ -191,22 +215,28 @@ export async function signUpAction(formData: FormData) {
   const supabase = await createSupabaseServerClient();
   const requestHeaders = await headers();
   const emailRedirectTo = getAbsoluteUrl("/auth/callback?next=/dashboard", requestHeaders.get("origin"));
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      emailRedirectTo,
-      data: {
-        full_name: fullName
-      }
-    }
-  });
+  let signUpResult: Awaited<ReturnType<typeof supabase.auth.signUp>>;
 
-  if (error) {
-    throw new Error(error.message);
+  try {
+    signUpResult = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo,
+        data: {
+          full_name: fullName
+        }
+      }
+    });
+  } catch {
+    redirect("/signup?error=auth-failed");
   }
 
-  if (data.session) {
+  if (signUpResult.error) {
+    redirect(`/signup?error=${authErrorCode(signUpResult.error.message)}`);
+  }
+
+  if (signUpResult.data.session) {
     redirect("/dashboard");
   }
 
