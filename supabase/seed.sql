@@ -183,8 +183,8 @@ values
   (
     '20000000-0000-0000-0000-000000000001',
     current_date - interval '35 days',
-    'two_month_cleaning',
-    '{"radiator":true,"battery":true,"generator":true,"control_panel":true,"generator_room":true}',
+    'general',
+    '{"overall_exhaust_line_condition":{"status":"OK","notes":""},"overall_engine_condition":{"status":"OK","notes":""},"overall_alternator_condition":{"status":"OK","notes":""}}',
     'Demo cleaning record.',
     'approved'
   );

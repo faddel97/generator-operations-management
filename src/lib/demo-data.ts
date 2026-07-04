@@ -89,8 +89,13 @@ export const demoModuleRows: Record<ModuleKey, GenericRow[]> = {
       id: "demo-maintenance-1",
       maintenance_date: new Date(Date.now() - 35 * 86400000).toISOString(),
       generator_id: "DEMO-GEN-001",
-      maintenance_type: "two_month_cleaning",
+      maintenance_type: "general",
       next_due_date: new Date(Date.now() + 25 * 86400000).toISOString(),
+      completed_items: {
+        overall_exhaust_line_condition: { status: "OK", notes: "" },
+        overall_engine_condition: { status: "OK", notes: "" },
+        overall_alternator_condition: { status: "OK", notes: "" }
+      },
       approval_status: "approved"
     }
   ],

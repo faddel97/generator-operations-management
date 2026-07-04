@@ -133,13 +133,21 @@ function FieldControl({ field, record, generatorOptions }: { field: FieldDefinit
               {items.map((item) => (
                 <div key={item.key} className="grid gap-3 px-4 py-3 md:grid-cols-[180px_140px_1fr_180px] md:items-center">
                   <div className="text-sm font-medium text-slate-800">{item.label}</div>
-                  <select name={`${field.name}.${item.key}.status`} defaultValue={getChecklistValue(record, field.name, item.key, "status") || "OK"} className={commonClass}>
-                    {(field.options ?? []).map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
+                  {item.control === "text" ? (
+                    <input
+                      name={`${field.name}.${item.key}.status`}
+                      defaultValue={getChecklistValue(record, field.name, item.key, "status") || item.defaultValue || ""}
+                      className={commonClass}
+                    />
+                  ) : (
+                    <select name={`${field.name}.${item.key}.status`} defaultValue={getChecklistValue(record, field.name, item.key, "status") || item.defaultValue || "OK"} className={commonClass}>
+                      {(item.options ?? field.options ?? []).map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                   <input name={`${field.name}.${item.key}.notes`} defaultValue={getChecklistValue(record, field.name, item.key, "notes")} className={commonClass} placeholder="Notes" />
                   <input name={`${field.name}.${item.key}.photo`} type="file" accept="image/*" className="block w-full text-xs text-slate-600 file:mr-2 file:rounded-md file:border-0 file:bg-slate-900 file:px-2 file:py-1.5 file:text-xs file:font-semibold file:text-white" />
                 </div>

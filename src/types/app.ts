@@ -40,6 +40,9 @@ export type ChecklistItem = {
   key: string;
   label: string;
   section?: string;
+  control?: "select" | "text";
+  options?: SelectOption[];
+  defaultValue?: string;
 };
 
 export type FieldDefinition = {

@@ -8,6 +8,7 @@ import { requireAuthenticated } from "@/lib/auth";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getDynamicSupabase, type DynamicSupabase } from "@/lib/data";
+import { deleteLocalDemoRecord, saveLocalDemoRecord, updateLocalDemoRecord } from "@/lib/local-demo-store";
 import { getModuleDefinition } from "@/lib/module-definitions";
 import { hasRole } from "@/lib/permissions";
 import { getAbsoluteUrl } from "@/lib/url";
@@ -41,7 +42,7 @@ function parseChecklist(formData: FormData, field: FieldDefinition) {
 
   for (const item of field.checklistItems ?? []) {
     result[item.key] = {
-      status: formString(formData, `${field.name}.${item.key}.status`) || "N/A",
+      status: formString(formData, `${field.name}.${item.key}.status`) || item.defaultValue || "N/A",
       notes: formString(formData, `${field.name}.${item.key}.notes`)
     };
   }
@@ -227,10 +228,6 @@ export async function saveModuleRecordAction(formData: FormData) {
   const definition = getModuleDefinition(moduleKey);
   const context = await requireAuthenticated();
 
-  if (!isSupabaseConfigured()) {
-    throw new Error("Supabase is not configured. Demo preview is read-only.");
-  }
-
   const allowedRoles = recordId ? definition.updateRoles : definition.createRoles;
   if (!hasRole(context.role, allowedRoles)) {
     throw new Error("You do not have permission to save this record.");
@@ -265,6 +262,12 @@ export async function saveModuleRecordAction(formData: FormData) {
 
   if (definition.reviewable && !payload.approval_status) {
     payload.approval_status = "submitted";
+  }
+
+  if (!isSupabaseConfigured()) {
+    await saveLocalDemoRecord(moduleKey, payload, recordId || undefined);
+    revalidatePath(definition.path);
+    redirect(definition.path);
   }
 
   const supabase = await getDynamicSupabase();
@@ -341,12 +344,14 @@ export async function deleteModuleRecordAction(formData: FormData) {
   const definition = getModuleDefinition(moduleKey);
   const context = await requireAuthenticated();
 
-  if (!isSupabaseConfigured()) {
-    throw new Error("Supabase is not configured. Demo preview is read-only.");
-  }
-
   if (!recordId || !hasRole(context.role, definition.deleteRoles)) {
     throw new Error("You do not have permission to delete this record.");
+  }
+
+  if (!isSupabaseConfigured()) {
+    await deleteLocalDemoRecord(moduleKey, recordId);
+    revalidatePath(definition.path);
+    return;
   }
 
   const supabase = await getDynamicSupabase();
@@ -366,16 +371,18 @@ export async function reviewRecordAction(formData: FormData) {
   const definition = getModuleDefinition(moduleKey);
   const context = await requireAuthenticated();
 
-  if (!isSupabaseConfigured()) {
-    throw new Error("Supabase is not configured. Demo preview is read-only.");
-  }
-
   if (!recordId || !hasRole(context.role, ["admin", "supervisor"])) {
     throw new Error("Only admins and supervisors can review records.");
   }
 
   if (!["approved", "rejected", "submitted"].includes(status)) {
     throw new Error("Invalid review status.");
+  }
+
+  if (!isSupabaseConfigured()) {
+    await updateLocalDemoRecord(moduleKey, recordId, { approval_status: status });
+    revalidatePath(definition.path);
+    return;
   }
 
   const supabase = await getDynamicSupabase();

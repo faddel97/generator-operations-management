@@ -6,6 +6,7 @@ export function DemoBanner() {
       <Database className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
       <div>
         <strong>Demo preview data.</strong> Supabase is not configured or no live rows are available. These sample rows are clearly marked and are not real generator data.
+        You can add local test records on this computer; they are saved only in `.local-data` and are not production data.
       </div>
     </div>
   );

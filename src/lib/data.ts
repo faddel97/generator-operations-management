@@ -1,6 +1,7 @@
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { demoGeneratorOptions, demoModuleRows, demoTrendData } from "@/lib/demo-data";
+import { demoGeneratorOptions, demoTrendData } from "@/lib/demo-data";
+import { getDemoRecord, getDemoRows, getLocalDemoRows } from "@/lib/local-demo-store";
 import { getModuleDefinition } from "@/lib/module-definitions";
 import type { GeneratorOption, ModuleKey } from "@/types/app";
 import type { GenericRow } from "@/types/database";
@@ -58,7 +59,13 @@ export async function getDynamicSupabase() {
 
 export async function getGeneratorOptions(): Promise<GeneratorOption[]> {
   if (!isSupabaseConfigured()) {
-    return demoGeneratorOptions;
+    const localGenerators = await getLocalDemoRows("generators");
+    const localOptions = localGenerators.map((row) => ({
+      id: String(row.id),
+      label: `${row.generator_id ?? "Generator"} - ${row.manufacturer ?? "Unknown"} ${row.model ?? ""}`.trim()
+    }));
+
+    return [...localOptions, ...demoGeneratorOptions];
   }
 
   const supabase = await getDynamicSupabase();
@@ -87,7 +94,7 @@ export async function getModuleRows(moduleKey: ModuleKey): Promise<{ rows: Gener
   const definition = getModuleDefinition(moduleKey);
 
   if (!isSupabaseConfigured()) {
-    return { rows: demoModuleRows[moduleKey] ?? [], isDemo: true };
+    return { rows: await getDemoRows(moduleKey), isDemo: true };
   }
 
   const supabase = await getDynamicSupabase();
@@ -107,7 +114,7 @@ export async function getModuleRows(moduleKey: ModuleKey): Promise<{ rows: Gener
 
 export async function getModuleRecord(moduleKey: ModuleKey, id: string) {
   if (!isSupabaseConfigured()) {
-    const row = demoModuleRows[moduleKey]?.find((item) => item.id === id) ?? null;
+    const row = await getDemoRecord(moduleKey, id);
     return { row, isDemo: true };
   }
 
@@ -124,17 +131,21 @@ export async function getModuleRecord(moduleKey: ModuleKey, id: string) {
 
 export async function getDashboardData(): Promise<DashboardData> {
   if (!isSupabaseConfigured()) {
+    const generators = await getDemoRows("generators");
+    const alarms = await getDemoRows("alarms");
+    const inspections = await getDemoRows("weekly-inspections");
+
     return {
       isDemo: true,
       stats: {
-        totalGenerators: demoModuleRows.generators.length,
+        totalGenerators: generators.length,
         maintenanceDue: 1,
-        latestAlarms: demoModuleRows.alarms.length,
-        latestInspections: demoModuleRows["weekly-inspections"].length,
+        latestAlarms: alarms.length,
+        latestInspections: inspections.length,
         averageHealthScore: 82
       },
-      latestAlarms: demoModuleRows.alarms,
-      latestInspections: demoModuleRows["weekly-inspections"],
+      latestAlarms: alarms,
+      latestInspections: inspections,
       trends: demoTrendData
     };
   }

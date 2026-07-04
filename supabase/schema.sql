@@ -174,10 +174,16 @@ create table if not exists public.maintenance_records (
   id uuid primary key default gen_random_uuid(),
   generator_id uuid not null references public.generators(id) on delete cascade,
   maintenance_date date not null default current_date,
-  maintenance_type text not null check (maintenance_type in ('two_month_cleaning', 'three_month_service', 'corrective')),
+  maintenance_type text not null check (maintenance_type in ('general', 'mechanical_inspection', 'battery', 'cleaning', 'corrective')),
   completed_items jsonb not null default '{}'::jsonb,
+  picture_paths text[] not null default '{}',
   last_maintenance_date date,
   next_due_date date,
+  permit_number text,
+  tra_form_path text,
+  gsa_form_path text,
+  ptw_form_path text,
+  signature text,
   notes text,
   approval_status public.approval_status not null default 'submitted',
   submitted_by uuid references public.users(id) on delete set null,
@@ -185,6 +191,40 @@ create table if not exists public.maintenance_records (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.maintenance_records
+  add column if not exists picture_paths text[] not null default '{}',
+  add column if not exists permit_number text,
+  add column if not exists tra_form_path text,
+  add column if not exists gsa_form_path text,
+  add column if not exists ptw_form_path text,
+  add column if not exists signature text;
+
+do $$
+begin
+  if exists (
+    select 1
+    from pg_constraint
+    where conname = 'maintenance_records_maintenance_type_check'
+      and conrelid = 'public.maintenance_records'::regclass
+  ) then
+    alter table public.maintenance_records drop constraint maintenance_records_maintenance_type_check;
+  end if;
+
+  update public.maintenance_records
+  set maintenance_type = case
+    when maintenance_type = 'two_month_cleaning' then 'cleaning'
+    when maintenance_type = 'three_month_service' then 'general'
+    else maintenance_type
+  end
+  where maintenance_type in ('two_month_cleaning', 'three_month_service');
+
+  alter table public.maintenance_records
+    add constraint maintenance_records_maintenance_type_check
+    check (maintenance_type in ('general', 'mechanical_inspection', 'battery', 'cleaning', 'corrective'));
+exception
+  when duplicate_object then null;
+end $$;
 
 create table if not exists public.load_tests (
   id uuid primary key default gen_random_uuid(),
@@ -368,8 +408,8 @@ language sql
 immutable
 as $$
   select case
-    when maintenance_type = 'two_month_cleaning' then maintenance_date + interval '2 months'
-    when maintenance_type = 'three_month_service' then maintenance_date + interval '3 months'
+    when maintenance_type = 'cleaning' then maintenance_date + interval '2 months'
+    when maintenance_type in ('general', 'mechanical_inspection', 'battery') then maintenance_date + interval '3 months'
     else maintenance_date
   end::date;
 $$;

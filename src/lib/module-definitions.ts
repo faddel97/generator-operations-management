@@ -20,24 +20,100 @@ const checklistStatusOptions = [
   { label: "N/A", value: "N/A" }
 ];
 
+const okNotOkOptions = [
+  { label: "OK", value: "OK" },
+  { label: "Not OK", value: "Not OK" }
+];
+
+const leakOptions = [
+  { label: "No leak", value: "No leak" },
+  { label: "Minor leak", value: "Minor leak" },
+  { label: "Major leak", value: "Major leak" }
+];
+
+const levelRiskOptions = [
+  { label: "Good - 60% and more", value: "Good" },
+  { label: "Mid - 40% to 59%", value: "Mid" },
+  { label: "Low - 25% to 39%", value: "Low" },
+  { label: "Critical - 1% to 24%", value: "Critical" }
+];
+
 export const weeklyInspectionItems: ChecklistItem[] = [
-  { key: "oil_level", label: "Oil Level", section: "Oil" },
-  { key: "oil_leak", label: "Oil Leak", section: "Oil" },
-  { key: "fuel_leak", label: "Fuel Leak", section: "Fuel" },
-  { key: "coolant_level", label: "Coolant Level", section: "Cooling" },
-  { key: "coolant_leak", label: "Coolant Leak", section: "Cooling" },
-  { key: "coolant_condition", label: "Coolant Condition", section: "Cooling" },
-  { key: "radiator_condition", label: "Radiator Condition", section: "Cooling" },
-  { key: "battery_condition", label: "Battery Condition", section: "Battery" },
-  { key: "battery_corrosion", label: "Battery Corrosion", section: "Battery" },
-  { key: "air_filter", label: "Air Filter", section: "Filters" },
-  { key: "fuel_filter", label: "Fuel Filter", section: "Filters" },
-  { key: "belts", label: "Belts", section: "Mechanical" },
-  { key: "hoses", label: "Hoses", section: "Mechanical" },
-  { key: "exhaust", label: "Exhaust", section: "Mechanical" },
-  { key: "generator_cleanliness", label: "Generator Cleanliness", section: "General" },
-  { key: "room_cleanliness", label: "Room Cleanliness", section: "General" },
-  { key: "general_condition", label: "General Condition", section: "General" }
+  { key: "oil_level", label: "Oil Level", section: "Oil", options: okNotOkOptions, defaultValue: "OK" },
+  { key: "oil_leak", label: "Oil Leak", section: "Oil", options: leakOptions, defaultValue: "No leak" },
+  { key: "oil_name", label: "Oil Name", section: "Oil", control: "text", defaultValue: "Castrol" },
+  {
+    key: "oil_usage",
+    label: "Oil Usage",
+    section: "Oil",
+    options: [
+      { label: "New", value: "New" },
+      { label: "Low", value: "Low" },
+      { label: "Medium", value: "Medium" },
+      { label: "High", value: "High" }
+    ],
+    defaultValue: "New"
+  },
+  {
+    key: "oil_efficiency",
+    label: "Oil Efficiency",
+    section: "Oil",
+    options: [
+      { label: "High", value: "High" },
+      { label: "Medium", value: "Medium" },
+      { label: "Low", value: "Low" },
+      { label: "Expired", value: "Expired" }
+    ],
+    defaultValue: "High"
+  },
+  { key: "fuel_leak", label: "Fuel Leak", section: "Fuel", options: leakOptions, defaultValue: "No leak" },
+  { key: "fuel_tank_percentage", label: "Fuel Tank Percentage", section: "Fuel", options: levelRiskOptions, defaultValue: "Good" },
+  { key: "coolant_level", label: "Coolant Level", section: "Cooling", options: okNotOkOptions, defaultValue: "OK" },
+  { key: "coolant_leak", label: "Coolant Leak", section: "Cooling", options: leakOptions, defaultValue: "No leak" },
+  { key: "coolant_condition", label: "Coolant Condition", section: "Cooling", options: okNotOkOptions, defaultValue: "OK" },
+  { key: "radiator_condition", label: "Radiator Condition", section: "Cooling", options: okNotOkOptions, defaultValue: "OK" },
+  { key: "battery_condition", label: "Battery Condition", section: "Battery", options: okNotOkOptions, defaultValue: "OK" },
+  { key: "battery_corrosion", label: "Battery Corrosion", section: "Battery", options: okNotOkOptions, defaultValue: "OK" },
+  {
+    key: "battery_charging_condition",
+    label: "Battery Charging Condition",
+    section: "Battery",
+    options: [
+      { label: "Working", value: "Working" },
+      { label: "Not working", value: "Not working" }
+    ],
+    defaultValue: "Working"
+  },
+  { key: "battery_electrolyte_level", label: "Battery Electrolyte Level", section: "Battery", options: levelRiskOptions, defaultValue: "Good" },
+  {
+    key: "oil_filter",
+    label: "Oil Filter",
+    section: "Filters",
+    options: [
+      { label: "OK", value: "OK" },
+      { label: "6 months to 12 months", value: "6 months to 12 months" },
+      { label: "250hrs to 500hrs", value: "250hrs to 500hrs" }
+    ],
+    defaultValue: "OK"
+  },
+  {
+    key: "fuel_filter",
+    label: "Fuel Filter",
+    section: "Filters",
+    options: [{ label: "250hrs to 500hrs", value: "250hrs to 500hrs" }],
+    defaultValue: "250hrs to 500hrs"
+  },
+  {
+    key: "air_filter",
+    label: "Air Filter",
+    section: "Filters",
+    options: [
+      { label: "OK", value: "OK" },
+      { label: "Needs clean", value: "Needs clean" },
+      { label: "500hrs to 1000hrs", value: "500hrs to 1000hrs" }
+    ],
+    defaultValue: "OK"
+  }
 ];
 
 export const atsProcedureItems: ChecklistItem[] = [
@@ -74,16 +150,41 @@ export const atsStuckOnGeneratorItems: ChecklistItem[] = [
 ];
 
 const maintenanceItems: ChecklistItem[] = [
-  { key: "radiator", label: "Radiator", section: "Every two months cleaning" },
-  { key: "battery", label: "Battery", section: "Every two months cleaning" },
-  { key: "generator", label: "Generator", section: "Every two months cleaning" },
-  { key: "control_panel", label: "Control Panel", section: "Every two months cleaning" },
-  { key: "generator_room", label: "Generator Room", section: "Every two months cleaning" },
-  { key: "oil_change", label: "Oil Change", section: "Every three months maintenance" },
-  { key: "oil_filter", label: "Oil Filter", section: "Every three months maintenance" },
-  { key: "fuel_filter", label: "Fuel Filter", section: "Every three months maintenance" },
-  { key: "air_filter", label: "Air Filter", section: "Every three months maintenance" },
-  { key: "general_service", label: "General Service", section: "Every three months maintenance" }
+  { key: "overall_exhaust_line_condition", label: "Overall Exhaust Line Condition", section: "General Maintenance" },
+  { key: "overall_engine_condition", label: "Overall Engine Condition", section: "General Maintenance" },
+  { key: "overall_alternator_condition", label: "Overall Alternator Condition", section: "General Maintenance" },
+  { key: "overall_radiator_condition", label: "Overall Radiator Condition", section: "General Maintenance" },
+  { key: "overall_batteries_condition", label: "Overall Batteries Condition", section: "General Maintenance" },
+  { key: "fan_and_fan_v_belt_condition", label: "Fan and Fan V-Belt Condition", section: "General Maintenance" },
+  { key: "battery_charger_condition", label: "Battery Charger Condition", section: "General Maintenance" },
+  { key: "dynamo_and_wiring_condition", label: "Dynamo and Wiring Condition", section: "General Maintenance" },
+  { key: "pipe_lines_joints_valves_condition", label: "Pipe Lines, Joints and Valves Condition", section: "General Maintenance" },
+  { key: "oil_filters_and_oil_separator_condition", label: "Oil Filters and Oil Separator Condition", section: "General Maintenance" },
+  { key: "fuel_filters_condition", label: "Fuel Filters Condition", section: "General Maintenance" },
+  { key: "air_filters_condition", label: "Air Filters Condition", section: "General Maintenance" },
+  { key: "hood_bolts_condition", label: "Hood Bolts Condition", section: "General Maintenance" },
+  { key: "exhaust_line_top_bolts_condition", label: "Exhaust Line Top Bolts Condition", section: "General Maintenance" },
+  { key: "oil_filters_condition", label: "Oil Filters Condition", section: "General Maintenance" },
+  { key: "earth_bolts_condition", label: "Earth Bolts Condition", section: "General Maintenance" },
+  { key: "radiator_cloth_condition", label: "Radiator Cloth Condition", section: "General Maintenance" },
+  { key: "genset_controller_condition", label: "Genset Controller Condition", section: "General Maintenance" },
+  { key: "alternator_outgoing_mccb_condition", label: "Alternator Outgoing MCCB Condition", section: "General Maintenance" },
+  { key: "genset_console_wiring_condition", label: "Genset Console Wiring Condition", section: "General Maintenance" },
+  { key: "jacket_water_heater_condition", label: "Jacket Water Heater Condition", section: "General Maintenance" },
+  { key: "alternator_heater_condition", label: "Alternator Heater Condition", section: "General Maintenance" },
+  { key: "genset_console_heater_condition", label: "Genset Console Heater Condition", section: "General Maintenance" },
+  { key: "coolant_level_pipe_lines_condition", label: "Coolant Level Pipe Lines and Condition", section: "General Maintenance" },
+  { key: "oil_level_oil_filling_drain_valve_condition", label: "Oil Level, Oil Filling and Drain Valve Condition", section: "General Maintenance" },
+  { key: "emergency_push_button_indication_lamps_condition", label: "Emergency Push Button and Indication Lamps Condition", section: "General Maintenance" },
+  { key: "outgoing_bus_bar_insulators_condition", label: "Outgoing Bus Bar and Insulators Condition", section: "General Maintenance" },
+  { key: "hood_louvers_condition", label: "Hood Louvers Condition", section: "General Maintenance" },
+  { key: "exhaust_silencers_condition", label: "Exhaust Silencers Condition", section: "General Maintenance" },
+  { key: "day_tank_oil_pipe_lines_condition", label: "Day Tank Oil Pipe Lines Condition", section: "General Maintenance" },
+  { key: "floor_and_drain_area_condition", label: "Floor and Drain Area Condition", section: "General Maintenance" },
+  { key: "heat_area_and_pipe_insulation_condition", label: "Heat Area and Pipe Insulation Condition", section: "General Maintenance" },
+  { key: "cable_terminations_and_cable_dressings_condition", label: "Cable Terminations and Cable Dressings Condition", section: "General Maintenance" },
+  { key: "terminal_panel_cable_entry_holes_covers_condition", label: "Terminal Panel Cable Entry Holes and Covers Condition", section: "General Maintenance" },
+  { key: "oil_fuel_coolant_level_indicators_condition", label: "Oil, Fuel and Coolant Level Indicators Condition", section: "General Maintenance" }
 ];
 
 const generatorFields: FieldDefinition[] = [
@@ -128,10 +229,10 @@ const generatorFields: FieldDefinition[] = [
   { name: "dse_controller_photo", label: "DSE Controller", type: "file", accept: "image/*", storageBucket: "generator-photos", storageTable: "generator_photos", storageType: "dse_controller", section: "Photos" },
   { name: "fuel_tank_plate", label: "Fuel Tank Plate", type: "file", accept: "image/*", storageBucket: "generator-photos", storageTable: "generator_photos", storageType: "fuel_tank_plate", section: "Photos" },
   { name: "generator_photos", label: "Generator Photos", type: "file", accept: "image/*", multiple: true, storageBucket: "generator-photos", storageTable: "generator_photos", storageType: "generator_photo", section: "Photos" },
-  { name: "ats_panel_photo", label: "ATS Panel Photo", type: "file", accept: "image/*", storageBucket: "generator-photos", storageTable: "generator_photos", storageType: "ats_panel", section: "Photos" },
   { name: "backup_dse", label: "Backup DSE", type: "file", storageBucket: "generator-files", storageTable: "generator_files", storageType: "backup_dse", section: "Files" },
-  { name: "wiring_diagram", label: "Wiring Diagram", type: "file", storageBucket: "generator-files", storageTable: "generator_files", storageType: "wiring_diagram", section: "Files" },
-  { name: "ats_single_line_diagram", label: "ATS Single Line Diagram", type: "file", storageBucket: "generator-files", storageTable: "generator_files", storageType: "ats_single_line_diagram", section: "Files" }
+  { name: "wiring_diagram", label: "Wiring Diagram", type: "file", storageBucket: "generator-files", storageTable: "generator_files", storageType: "wiring_diagram", section: "Diagrams" },
+  { name: "ats_diagram", label: "ATS Diagram", type: "file", storageBucket: "generator-files", storageTable: "generator_files", storageType: "ats_diagram", section: "Diagrams" },
+  { name: "station_diagram", label: "Station Diagram", type: "file", storageBucket: "generator-files", storageTable: "generator_files", storageType: "station_diagram", section: "Diagrams" }
 ];
 
 export const moduleDefinitions: Record<string, ModuleDefinition> = {
@@ -330,14 +431,22 @@ export const moduleDefinitions: Record<string, ModuleDefinition> = {
         required: true,
         section: "Record",
         options: [
-          { label: "Every two months cleaning", value: "two_month_cleaning" },
-          { label: "Every three months maintenance", value: "three_month_service" },
+          { label: "General", value: "general" },
+          { label: "Mechanical inspection", value: "mechanical_inspection" },
+          { label: "Battery", value: "battery" },
+          { label: "Cleaning", value: "cleaning" },
           { label: "Corrective", value: "corrective" }
         ]
       },
-      { name: "completed_items", label: "Completed Items", type: "procedure", checklistItems: maintenanceItems, section: "Completed Items" },
+      { name: "completed_items", label: "General Maintenance Checklist", type: "checklist", checklistItems: maintenanceItems, options: checklistStatusOptions, section: "General Checklist" },
+      { name: "picture_paths", label: "Maintenance Pictures", type: "file", accept: "image/*", multiple: true, storageBucket: "operation-attachments", targetColumn: "picture_paths", section: "Pictures" },
       { name: "last_maintenance_date", label: "Last Maintenance Date", type: "date", section: "Due Date" },
       { name: "next_due_date", label: "Next Due Date", type: "date", helper: "Leave blank to calculate automatically in Supabase.", section: "Due Date" },
+      { name: "permit_number", label: "Maintenance Permit Number", type: "text", section: "Permit" },
+      { name: "tra_form_path", label: "TRA Form", type: "file", storageBucket: "operation-attachments", targetColumn: "tra_form_path", section: "Permit" },
+      { name: "gsa_form_path", label: "GSA Form", type: "file", storageBucket: "operation-attachments", targetColumn: "gsa_form_path", section: "Permit" },
+      { name: "ptw_form_path", label: "PTW Form", type: "file", storageBucket: "operation-attachments", targetColumn: "ptw_form_path", section: "Permit" },
+      { name: "signature", label: "Signature", type: "text", section: "Signature" },
       { name: "notes", label: "Notes", type: "textarea", section: "Notes" },
       { name: "approval_status", label: "Approval Status", type: "select", options: approvalOptions, section: "Review" }
     ],
