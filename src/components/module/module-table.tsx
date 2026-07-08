@@ -3,7 +3,7 @@ import { Check, Edit, Eye, Trash2, X } from "lucide-react";
 
 import { deleteModuleRecordAction, reviewRecordAction } from "@/lib/actions";
 import { formatDate, formatNumber, humanize } from "@/lib/format";
-import { canDelete, canReview, hasRole } from "@/lib/permissions";
+import { canReview, hasRole } from "@/lib/permissions";
 import type { ModuleDefinition, SessionContext } from "@/types/app";
 import type { GenericRow } from "@/types/database";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -146,7 +146,7 @@ export function ModuleTable({
                       </form>
                     </>
                   ) : null}
-                  {canDelete(context.role) ? (
+                  {hasRole(context.role, definition.deleteRoles) ? (
                     <form action={deleteModuleRecordAction}>
                       <input type="hidden" name="moduleKey" value={definition.key} />
                       <input type="hidden" name="recordId" value={String(row.id)} />

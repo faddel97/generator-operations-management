@@ -1,6 +1,6 @@
-import { ModuleEditPage } from "@/components/module/module-pages";
+import { redirect } from "next/navigation";
 
-export default async function EditEventLogPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EventLogEditPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  return <ModuleEditPage moduleKey="event-logs" id={id} />;
+  redirect(`/event-logs/${id}`);
 }

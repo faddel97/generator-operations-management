@@ -258,6 +258,10 @@ export async function saveModuleRecordAction(formData: FormData) {
   const definition = getModuleDefinition(moduleKey);
   const context = await requireAuthenticated();
 
+  if (moduleKey === "event-logs") {
+    throw new Error("Event logs are read-only and are created automatically.");
+  }
+
   const allowedRoles = recordId ? definition.updateRoles : definition.createRoles;
   if (!hasRole(context.role, allowedRoles)) {
     throw new Error("You do not have permission to save this record.");
@@ -373,6 +377,10 @@ export async function deleteModuleRecordAction(formData: FormData) {
   const recordId = formString(formData, "recordId");
   const definition = getModuleDefinition(moduleKey);
   const context = await requireAuthenticated();
+
+  if (moduleKey === "event-logs") {
+    throw new Error("Event logs are read-only and cannot be deleted.");
+  }
 
   if (!recordId || !hasRole(context.role, definition.deleteRoles)) {
     throw new Error("You do not have permission to delete this record.");

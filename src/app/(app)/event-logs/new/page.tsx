@@ -1,5 +1,5 @@
-import { ModuleNewPage } from "@/components/module/module-pages";
+import { redirect } from "next/navigation";
 
-export default function NewEventLogPage() {
-  return <ModuleNewPage moduleKey="event-logs" />;
+export default function EventLogNewPage() {
+  redirect("/event-logs");
 }
