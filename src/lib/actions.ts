@@ -13,6 +13,13 @@ import { getModuleDefinition } from "@/lib/module-definitions";
 import { hasRole } from "@/lib/permissions";
 import { getAbsoluteUrl } from "@/lib/url";
 import type { FieldDefinition, ModuleKey } from "@/types/app";
+import type { GenericRow } from "@/types/database";
+
+type ChecklistPayloadItem = {
+  status: string;
+  notes: string;
+  photo_path?: string;
+};
 
 function authErrorCode(message?: string) {
   const normalized = message?.toLowerCase() ?? "";
@@ -56,7 +63,7 @@ function parseScalarField(formData: FormData, field: FieldDefinition) {
 }
 
 function parseChecklist(formData: FormData, field: FieldDefinition) {
-  const result: Record<string, { status: string; notes: string }> = {};
+  const result: Record<string, ChecklistPayloadItem> = {};
 
   for (const item of field.checklistItems ?? []) {
     result[item.key] = {
@@ -66,6 +73,46 @@ function parseChecklist(formData: FormData, field: FieldDefinition) {
   }
 
   return result;
+}
+
+function extractStoragePaths(value: unknown) {
+  if (typeof value === "string" && value.trim() !== "") {
+    return [value];
+  }
+
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === "string" && item.trim() !== "");
+  }
+
+  return [];
+}
+
+function preserveChecklistPhotoPaths({
+  nextChecklist,
+  previousChecklist,
+  field
+}: {
+  nextChecklist: Record<string, ChecklistPayloadItem>;
+  previousChecklist: unknown;
+  field: FieldDefinition;
+}) {
+  if (!previousChecklist || typeof previousChecklist !== "object" || Array.isArray(previousChecklist)) {
+    return nextChecklist;
+  }
+
+  const previousItems = previousChecklist as Record<string, Record<string, unknown>>;
+
+  for (const item of field.checklistItems ?? []) {
+    const previousPhotoPath = previousItems[item.key]?.photo_path;
+    if (typeof previousPhotoPath === "string" && previousPhotoPath.trim() !== "") {
+      nextChecklist[item.key] = {
+        ...(nextChecklist[item.key] ?? { status: item.defaultValue ?? "N/A", notes: "" }),
+        photo_path: previousPhotoPath
+      };
+    }
+  }
+
+  return nextChecklist;
 }
 
 function parseProcedure(formData: FormData, field: FieldDefinition) {
@@ -257,6 +304,9 @@ export async function saveModuleRecordAction(formData: FormData) {
   const recordId = formString(formData, "recordId");
   const definition = getModuleDefinition(moduleKey);
   const context = await requireAuthenticated();
+  const supabaseConfigured = isSupabaseConfigured();
+  let supabase: DynamicSupabase | null = null;
+  let existingRecord: GenericRow | null = null;
 
   if (moduleKey === "event-logs") {
     throw new Error("Event logs are read-only and are created automatically.");
@@ -267,6 +317,18 @@ export async function saveModuleRecordAction(formData: FormData) {
     throw new Error("You do not have permission to save this record.");
   }
 
+  if (supabaseConfigured) {
+    supabase = await getDynamicSupabase();
+  }
+
+  if (recordId && supabase) {
+    const existingResult = await supabase.from(definition.table).select("*").eq("id", recordId).maybeSingle();
+    if (existingResult.error) {
+      throw new Error(existingResult.error.message);
+    }
+    existingRecord = existingResult.data;
+  }
+
   const payload: Record<string, unknown> = {};
 
   for (const field of definition.fields) {
@@ -275,7 +337,11 @@ export async function saveModuleRecordAction(formData: FormData) {
     }
 
     if (field.type === "checklist") {
-      payload[field.name] = parseChecklist(formData, field);
+      payload[field.name] = preserveChecklistPhotoPaths({
+        nextChecklist: parseChecklist(formData, field),
+        previousChecklist: existingRecord?.[field.name],
+        field
+      });
       continue;
     }
 
@@ -298,13 +364,16 @@ export async function saveModuleRecordAction(formData: FormData) {
     payload.approval_status = "submitted";
   }
 
-  if (!isSupabaseConfigured()) {
+  if (!supabaseConfigured) {
     await saveLocalDemoRecord(moduleKey, payload, recordId || undefined);
     revalidatePath(definition.path);
-    redirect(definition.path);
+    redirect(`${definition.path}?saved=${recordId ? "updated" : "created"}`);
   }
 
-  const supabase = await getDynamicSupabase();
+  if (!supabase) {
+    throw new Error("Supabase is not configured.");
+  }
+
   const saved = recordId
     ? await supabase.from(definition.table).update(payload).eq("id", recordId).select("*").single()
     : await supabase.from(definition.table).insert(payload).select("*").single();
@@ -326,7 +395,8 @@ export async function saveModuleRecordAction(formData: FormData) {
     });
 
     if (field.targetColumn && uploadedPaths.length > 0) {
-      fileColumnUpdates[field.targetColumn] = field.multiple ? uploadedPaths : uploadedPaths[0];
+      const existingPaths = extractStoragePaths((existingRecord ?? saved.data)[field.targetColumn]);
+      fileColumnUpdates[field.targetColumn] = field.multiple ? [...existingPaths, ...uploadedPaths] : uploadedPaths[0];
     }
   }
 
@@ -369,7 +439,8 @@ export async function saveModuleRecordAction(formData: FormData) {
   }
 
   revalidatePath(definition.path);
-  redirect(definition.path);
+  revalidatePath(`${definition.path}/${savedId}`);
+  redirect(`${definition.path}?saved=${recordId ? "updated" : "created"}`);
 }
 
 export async function deleteModuleRecordAction(formData: FormData) {

@@ -1,8 +1,9 @@
 import Link from "next/link";
 
+import { AttachmentList } from "@/components/module/attachment-list";
 import { saveModuleRecordAction } from "@/lib/actions";
 import { humanize, todayIsoDate } from "@/lib/format";
-import type { FieldDefinition, GeneratorOption, ModuleDefinition } from "@/types/app";
+import type { AttachmentMap, FieldDefinition, GeneratorOption, ModuleDefinition } from "@/types/app";
 import type { GenericRow } from "@/types/database";
 import { SubmitButton } from "@/components/ui/submit-button";
 
@@ -62,7 +63,17 @@ function isProcedureChecked(record: GenericRow | null | undefined, fieldName: st
   return Boolean((raw as Record<string, boolean>)[itemKey]);
 }
 
-function FieldControl({ field, record, generatorOptions }: { field: FieldDefinition; record?: GenericRow | null; generatorOptions: GeneratorOption[] }) {
+function FieldControl({
+  field,
+  record,
+  generatorOptions,
+  attachments
+}: {
+  field: FieldDefinition;
+  record?: GenericRow | null;
+  generatorOptions: GeneratorOption[];
+  attachments: AttachmentMap;
+}) {
   const commonClass = "form-input";
   const defaultValue = fieldValue(record, field);
 
@@ -106,14 +117,19 @@ function FieldControl({ field, record, generatorOptions }: { field: FieldDefinit
   }
 
   if (field.type === "file") {
+    const fieldAttachments = attachments[field.name] ?? [];
+
     return (
-      <input
-        name={field.name}
-        type="file"
-        accept={field.accept}
-        multiple={field.multiple}
-        className="block w-full rounded-md border border-dashed border-slate-300 bg-white px-3 py-3 text-sm text-slate-700 file:mr-4 file:rounded-md file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white"
-      />
+      <div>
+        <input
+          name={field.name}
+          type="file"
+          accept={field.accept}
+          multiple={field.multiple}
+          className="block w-full rounded-md border border-dashed border-slate-300 bg-white px-3 py-3 text-sm text-slate-700 file:mr-4 file:rounded-md file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white"
+        />
+        <AttachmentList attachments={fieldAttachments} compact />
+      </div>
     );
   }
 
@@ -149,7 +165,10 @@ function FieldControl({ field, record, generatorOptions }: { field: FieldDefinit
                     </select>
                   )}
                   <input name={`${field.name}.${item.key}.notes`} defaultValue={getChecklistValue(record, field.name, item.key, "notes")} className={commonClass} placeholder="Notes" />
-                  <input name={`${field.name}.${item.key}.photo`} type="file" accept="image/*" className="block w-full text-xs text-slate-600 file:mr-2 file:rounded-md file:border-0 file:bg-slate-900 file:px-2 file:py-1.5 file:text-xs file:font-semibold file:text-white" />
+                  <div>
+                    <input name={`${field.name}.${item.key}.photo`} type="file" accept="image/*" className="block w-full text-xs text-slate-600 file:mr-2 file:rounded-md file:border-0 file:bg-slate-900 file:px-2 file:py-1.5 file:text-xs file:font-semibold file:text-white" />
+                    <AttachmentList attachments={attachments[`${field.name}.${item.key}.photo`] ?? []} compact />
+                  </div>
                 </div>
               ))}
             </div>
@@ -193,11 +212,13 @@ function FieldControl({ field, record, generatorOptions }: { field: FieldDefinit
 export function ModuleForm({
   definition,
   generatorOptions,
-  record
+  record,
+  attachments = {}
 }: {
   definition: ModuleDefinition;
   generatorOptions: GeneratorOption[];
   record?: GenericRow | null;
+  attachments?: AttachmentMap;
 }) {
   const sections = groupBySection(definition.fields);
 
@@ -219,7 +240,7 @@ export function ModuleForm({
                     {field.label}
                     {field.required ? <span className="text-red-600"> *</span> : null}
                   </label>
-                  <FieldControl field={field} record={record} generatorOptions={generatorOptions} />
+                  <FieldControl field={field} record={record} generatorOptions={generatorOptions} attachments={attachments} />
                   {field.helper ? <p className="mt-1.5 text-xs text-slate-500">{field.helper}</p> : null}
                 </div>
               );

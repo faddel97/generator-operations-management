@@ -1,18 +1,19 @@
 import { notFound } from "next/navigation";
 
 import { DemoBanner } from "@/components/demo-banner";
+import { AttachmentList } from "@/components/module/attachment-list";
 import { ModuleForm } from "@/components/module/module-form";
 import { ModuleTable } from "@/components/module/module-table";
 import { PageHeader } from "@/components/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { getGeneratorLabelMap, getGeneratorOptions, getModuleRecord, getModuleRows } from "@/lib/data";
+import { getGeneratorLabelMap, getGeneratorOptions, getModuleAttachments, getModuleRecord, getModuleRows } from "@/lib/data";
 import { formatDate, formatNumber, humanize } from "@/lib/format";
 import { getModuleDefinition } from "@/lib/module-definitions";
 import { hasRole } from "@/lib/permissions";
 import { requireAuthenticated } from "@/lib/auth";
 import type { ModuleKey } from "@/types/app";
 
-function actionErrorMessage(actionError?: string) {
+export function moduleActionErrorMessage(actionError?: string) {
   if (actionError === "delete-failed") {
     return "Delete failed because the database rejected the request. Run the latest Supabase repair SQL, then try again.";
   }
@@ -20,11 +21,24 @@ function actionErrorMessage(actionError?: string) {
   return null;
 }
 
-export async function ModuleIndexPage({ moduleKey, actionError }: { moduleKey: ModuleKey; actionError?: string }) {
+export function moduleSaveMessage(saved?: string) {
+  if (saved === "created") {
+    return "Record saved successfully. Any uploaded photos or files were attached to it.";
+  }
+
+  if (saved === "updated") {
+    return "Record updated successfully. Any uploaded photos or files were attached to it.";
+  }
+
+  return null;
+}
+
+export async function ModuleIndexPage({ moduleKey, actionError, saved }: { moduleKey: ModuleKey; actionError?: string; saved?: string }) {
   const definition = getModuleDefinition(moduleKey);
   const context = await requireAuthenticated();
   const [{ rows, isDemo, error }, generatorMap] = await Promise.all([getModuleRows(moduleKey), getGeneratorLabelMap()]);
-  const actionErrorText = actionErrorMessage(actionError);
+  const actionErrorText = moduleActionErrorMessage(actionError);
+  const savedText = moduleSaveMessage(saved);
 
   return (
     <div className="space-y-5">
@@ -37,6 +51,7 @@ export async function ModuleIndexPage({ moduleKey, actionError }: { moduleKey: M
         allowedRoles={definition.createRoles}
       />
       {isDemo ? <DemoBanner /> : null}
+      {savedText ? <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">{savedText}</div> : null}
       {actionErrorText ? <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{actionErrorText}</div> : null}
       {error ? <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</div> : null}
       <ModuleTable definition={definition} rows={rows} context={context} generatorMap={generatorMap} />
@@ -85,12 +100,14 @@ export async function ModuleEditPage({ moduleKey, id }: { moduleKey: ModuleKey; 
     );
   }
 
+  const attachments = await getModuleAttachments(moduleKey, row);
+
   return (
     <div className="space-y-5">
       <PageHeader title={`Edit ${definition.singularTitle}`} description={definition.description} />
       {isDemo ? <DemoBanner /> : null}
       {error ? <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</div> : null}
-      <ModuleForm definition={definition} generatorOptions={generatorOptions} record={row} />
+      <ModuleForm definition={definition} generatorOptions={generatorOptions} record={row} attachments={attachments} />
     </div>
   );
 }
@@ -102,6 +119,9 @@ export async function GeneratorDetailPage({ id }: { id: string }) {
   if (!row) {
     notFound();
   }
+
+  const attachments = await getModuleAttachments("generators", row);
+  const attachedFields = definition.fields.filter((field) => field.type === "file" && (attachments[field.name] ?? []).length > 0);
 
   return (
     <div className="space-y-5">
@@ -135,9 +155,24 @@ export async function GeneratorDetailPage({ id }: { id: string }) {
                   </dd>
                 </div>
               );
-            })}
+          })}
         </dl>
       </div>
+      {attachedFields.length > 0 ? (
+        <div className="rounded-md border border-slate-200 bg-white">
+          <div className="border-b border-slate-200 px-5 py-4">
+            <h3 className="text-base font-semibold text-slate-950">Files and Photos</h3>
+          </div>
+          <div className="space-y-5 p-5">
+            {attachedFields.map((field) => (
+              <section key={field.name} className="space-y-2">
+                <h4 className="text-sm font-semibold text-slate-800">{field.label}</h4>
+                <AttachmentList attachments={attachments[field.name] ?? []} />
+              </section>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

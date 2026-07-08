@@ -66,6 +66,19 @@ export type FieldDefinition = {
   targetColumn?: string;
 };
 
+export type UploadedAttachment = {
+  id?: string;
+  fieldName: string;
+  label: string;
+  bucket: NonNullable<FieldDefinition["storageBucket"]>;
+  path: string;
+  fileName: string;
+  url?: string;
+  createdAt?: string;
+};
+
+export type AttachmentMap = Record<string, UploadedAttachment[]>;
+
 export type TableColumn = {
   key: string;
   label: string;

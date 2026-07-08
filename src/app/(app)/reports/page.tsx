@@ -1,6 +1,7 @@
 import { Download, FileText } from "lucide-react";
 
 import { DemoBanner } from "@/components/demo-banner";
+import { moduleActionErrorMessage, moduleSaveMessage } from "@/components/module/module-pages";
 import { ModuleTable } from "@/components/module/module-table";
 import { PageHeader } from "@/components/page-header";
 import { getGeneratorLabelMap, getModuleRows } from "@/lib/data";
@@ -9,10 +10,18 @@ import { requireAuthenticated } from "@/lib/auth";
 
 const reportTypes = ["Weekly report", "Monthly report", "Generator health report", "Maintenance due report", "Alarm history report", "Event log analysis"];
 
-export default async function ReportsPage() {
+type ModuleSearchParams = {
+  actionError?: string;
+  saved?: string;
+};
+
+export default async function ReportsPage({ searchParams }: { searchParams: Promise<ModuleSearchParams> }) {
+  const { actionError, saved } = await searchParams;
   const definition = getModuleDefinition("reports");
   const context = await requireAuthenticated();
   const [{ rows, isDemo, error }, generatorMap] = await Promise.all([getModuleRows("reports"), getGeneratorLabelMap()]);
+  const actionErrorText = moduleActionErrorMessage(actionError);
+  const savedText = moduleSaveMessage(saved);
 
   return (
     <div className="space-y-5">
@@ -33,6 +42,8 @@ export default async function ReportsPage() {
         ))}
       </div>
       {isDemo ? <DemoBanner /> : null}
+      {savedText ? <div className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">{savedText}</div> : null}
+      {actionErrorText ? <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{actionErrorText}</div> : null}
       {error ? <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</div> : null}
       <ModuleTable definition={definition} rows={rows} context={context} generatorMap={generatorMap} />
     </div>
