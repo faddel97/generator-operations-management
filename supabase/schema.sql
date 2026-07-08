@@ -582,6 +582,14 @@ security definer
 set search_path = public
 as $$
 begin
+  if TG_OP = 'UPDATE'
+    and OLD.generator_id is not null
+    and NEW.generator_id is null
+    and (to_jsonb(NEW) - 'generator_id') = (to_jsonb(OLD) - 'generator_id')
+  then
+    return NEW;
+  end if;
+
   raise exception 'Event logs are immutable.';
 end;
 $$;

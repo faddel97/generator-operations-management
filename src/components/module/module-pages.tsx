@@ -15,7 +15,7 @@ import type { ModuleKey } from "@/types/app";
 
 export function moduleActionErrorMessage(actionError?: string) {
   if (actionError === "delete-failed") {
-    return "Delete failed because the database rejected the request. Run the latest Supabase repair SQL, then try again.";
+    return "Delete failed because the database rejected the request. Run supabase/allow-generator-delete-with-audit.sql in Supabase SQL Editor, then try again.";
   }
 
   return null;
