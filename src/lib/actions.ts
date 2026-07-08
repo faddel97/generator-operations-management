@@ -393,13 +393,14 @@ export async function deleteModuleRecordAction(formData: FormData) {
   }
 
   const supabase = await getDynamicSupabase();
-  const result = await supabase.from(definition.table).delete().eq("id", recordId).select("*").single();
+  const result = await supabase.from(definition.table).delete().eq("id", recordId).select("id").maybeSingle();
 
   if (result.error) {
-    throw new Error(result.error.message);
+    redirect(`${definition.path}?actionError=delete-failed`);
   }
 
   revalidatePath(definition.path);
+  redirect(definition.path);
 }
 
 export async function reviewRecordAction(formData: FormData) {

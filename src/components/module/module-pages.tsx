@@ -12,10 +12,19 @@ import { hasRole } from "@/lib/permissions";
 import { requireAuthenticated } from "@/lib/auth";
 import type { ModuleKey } from "@/types/app";
 
-export async function ModuleIndexPage({ moduleKey }: { moduleKey: ModuleKey }) {
+function actionErrorMessage(actionError?: string) {
+  if (actionError === "delete-failed") {
+    return "Delete failed because the database rejected the request. Run the latest Supabase repair SQL, then try again.";
+  }
+
+  return null;
+}
+
+export async function ModuleIndexPage({ moduleKey, actionError }: { moduleKey: ModuleKey; actionError?: string }) {
   const definition = getModuleDefinition(moduleKey);
   const context = await requireAuthenticated();
   const [{ rows, isDemo, error }, generatorMap] = await Promise.all([getModuleRows(moduleKey), getGeneratorLabelMap()]);
+  const actionErrorText = actionErrorMessage(actionError);
 
   return (
     <div className="space-y-5">
@@ -28,6 +37,7 @@ export async function ModuleIndexPage({ moduleKey }: { moduleKey: ModuleKey }) {
         allowedRoles={definition.createRoles}
       />
       {isDemo ? <DemoBanner /> : null}
+      {actionErrorText ? <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">{actionErrorText}</div> : null}
       {error ? <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</div> : null}
       <ModuleTable definition={definition} rows={rows} context={context} generatorMap={generatorMap} />
     </div>
