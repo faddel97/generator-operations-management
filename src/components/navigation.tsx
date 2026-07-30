@@ -6,6 +6,7 @@ import {
   Activity,
   BarChart3,
   ClipboardCheck,
+  Cpu,
   FileBarChart,
   Gauge,
   History,
@@ -24,6 +25,7 @@ import type { AppRole } from "@/types/app";
 const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: Home, roles: ["admin", "supervisor", "technician", "viewer"] },
   { label: "Generators", href: "/generators", icon: Gauge, roles: ["admin", "supervisor", "technician"] },
+  { label: "Parts", href: "/parts", icon: Cpu, roles: ["admin", "supervisor", "technician", "viewer"] },
   { label: "Inspections", href: "/inspections", icon: ClipboardCheck, roles: ["admin", "supervisor", "technician"] },
   { label: "DSE Monitoring", href: "/dse-readings", icon: Activity, roles: ["admin", "supervisor", "technician"] },
   { label: "ATS Tests", href: "/ats-tests", icon: PlugZap, roles: ["admin", "supervisor", "technician"] },
