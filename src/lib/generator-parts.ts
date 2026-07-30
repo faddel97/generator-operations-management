@@ -262,3 +262,12 @@ export const generatorParts: GeneratorPart[] = [
 ];
 
 export const generatorPartCategories = Array.from(new Set(generatorParts.map((part) => part.category)));
+
+export function generatorPartImagePath(part: Pick<GeneratorPart, "number" | "name">) {
+  const slug = part.name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return `/generator-parts/${String(part.number).padStart(2, "0")}-${slug}.jpg`;
+}
