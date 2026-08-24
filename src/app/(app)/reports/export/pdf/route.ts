@@ -81,9 +81,11 @@ function getPdfEntries(formData: FormData) {
 function createPdfBuffer(build: (doc: PDFKit.PDFDocument) => void) {
   return new Promise<Buffer>((resolve, reject) => {
     const chunks: Buffer[] = [];
+    const reportFontPath = path.join(process.cwd(), "public", "fonts", "NotoSansArabic.ttf");
     const doc = new PDFDocument({
       size: "A4",
       margin,
+      font: reportFontPath,
       bufferPages: true,
       info: {
         Title: "GOM Report",
