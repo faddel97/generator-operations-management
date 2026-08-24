@@ -1,4 +1,4 @@
-import { Download, FileText } from "lucide-react";
+import { Download, FileDown, FileText } from "lucide-react";
 
 import { DemoBanner } from "@/components/demo-banner";
 import { moduleActionErrorMessage, moduleSaveMessage } from "@/components/module/module-pages";
@@ -6,16 +6,10 @@ import { ModuleTable } from "@/components/module/module-table";
 import { PageHeader } from "@/components/page-header";
 import { getGeneratorLabelMap, getModuleRows } from "@/lib/data";
 import { getModuleDefinition } from "@/lib/module-definitions";
+import { reportExportOptions } from "@/lib/report-export";
 import { requireAuthenticated } from "@/lib/auth";
 
-const reportTypes = [
-  { label: "Weekly report", value: "weekly" },
-  { label: "Monthly report", value: "monthly" },
-  { label: "Generator health report", value: "generator_health" },
-  { label: "Maintenance due report", value: "maintenance_due" },
-  { label: "Alarm history report", value: "alarm_history" },
-  { label: "Event log analysis", value: "event_log_analysis" }
-];
+const reportTypes = reportExportOptions;
 
 type ModuleSearchParams = {
   actionError?: string;
@@ -40,10 +34,16 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
               <FileText className="h-5 w-5" aria-hidden="true" />
             </div>
             <h3 className="font-semibold text-slate-950">{type.label}</h3>
-            <a href={`/reports/export?type=${type.value}`} className="mt-4 inline-flex min-h-9 items-center gap-2 rounded-md border border-teal-700 px-3 text-sm font-semibold text-teal-800 hover:bg-teal-50">
-              <Download className="h-4 w-4" aria-hidden="true" />
-              Export CSV
-            </a>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <a href={`/reports/export?type=${type.value}`} className="inline-flex min-h-9 items-center gap-2 rounded-md border border-teal-700 px-3 text-sm font-semibold text-teal-800 hover:bg-teal-50">
+                <Download className="h-4 w-4" aria-hidden="true" />
+                CSV
+              </a>
+              <a href={`/reports/pdf?type=${type.value}`} className="inline-flex min-h-9 items-center gap-2 rounded-md bg-teal-700 px-3 text-sm font-semibold text-white hover:bg-teal-800">
+                <FileDown className="h-4 w-4" aria-hidden="true" />
+                PDF
+              </a>
+            </div>
           </div>
         ))}
       </div>
