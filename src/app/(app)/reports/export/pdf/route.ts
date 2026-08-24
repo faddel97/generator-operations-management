@@ -28,6 +28,22 @@ const slate500 = "#64748b";
 const slate200 = "#e2e8f0";
 const slate50 = "#f8fafc";
 
+export function GET(request: NextRequest) {
+  const redirectUrl = new URL("/reports/pdf", request.url);
+  const reportType = request.nextUrl.searchParams.get("type");
+  const reportId = request.nextUrl.searchParams.get("reportId");
+
+  if (reportType) {
+    redirectUrl.searchParams.set("type", reportType);
+  }
+
+  if (reportId) {
+    redirectUrl.searchParams.set("reportId", reportId);
+  }
+
+  return NextResponse.redirect(redirectUrl);
+}
+
 async function requireExportSession() {
   if (!isSupabaseConfigured()) {
     return null;
