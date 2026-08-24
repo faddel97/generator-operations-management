@@ -18,8 +18,8 @@ export async function createSupabaseServerClient() {
             cookieStore.set(name, value, options);
           });
         } catch {
-          // Server components cannot always mutate cookies. Supabase middleware
-          // keeps sessions refreshed for normal navigation.
+          // Server components cannot always mutate cookies. Route handlers and
+          // server actions still persist auth changes when they own the response.
         }
       }
     }
