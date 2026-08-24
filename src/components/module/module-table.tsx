@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Check, Edit, Eye, Trash2, X } from "lucide-react";
+import { Check, Download, Edit, Eye, Trash2, X } from "lucide-react";
 
 import { deleteModuleRecordAction, reviewRecordAction } from "@/lib/actions";
 import { formatDate, formatNumber, humanize } from "@/lib/format";
@@ -108,6 +108,15 @@ export function ModuleTable({
                     >
                       <Eye className="h-4 w-4" aria-hidden="true" />
                     </Link>
+                  ) : null}
+                  {definition.key === "reports" ? (
+                    <a
+                      href={`${definition.path}/export?reportId=${row.id}`}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50"
+                      title="Export CSV"
+                    >
+                      <Download className="h-4 w-4" aria-hidden="true" />
+                    </a>
                   ) : null}
                   {hasRole(context.role, definition.updateRoles) ? (
                     <Link
