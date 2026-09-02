@@ -15,6 +15,7 @@ const errorMessages: Record<string, string> = {
   "auth-failed": "Unable to create the account. Check the Supabase settings and try again.",
   "database-setup": "Supabase is connected, but the database schema has not been installed correctly.",
   "email-exists": "This email is already registered. Sign in instead.",
+  "service-unavailable": "The Supabase project cannot be reached. Restore or restart the project, then try again.",
   "supabase-missing": "Supabase is not configured for this deployment yet."
 };
 

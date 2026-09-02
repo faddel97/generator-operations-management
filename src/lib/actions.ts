@@ -24,6 +24,15 @@ type ChecklistPayloadItem = {
 function authErrorCode(message?: string) {
   const normalized = message?.toLowerCase() ?? "";
 
+  if (
+    normalized.includes("fetch failed") ||
+    normalized.includes("network") ||
+    normalized.includes("enotfound") ||
+    normalized.includes("timeout")
+  ) {
+    return "service-unavailable";
+  }
+
   if (normalized.includes("already registered") || normalized.includes("already exists")) {
     return "email-exists";
   }
@@ -240,8 +249,8 @@ export async function signInAction(formData: FormData) {
 
   try {
     signInResult = await supabase.auth.signInWithPassword({ email, password });
-  } catch {
-    redirect("/login?error=auth-failed");
+  } catch (error) {
+    redirect(`/login?error=${authErrorCode(error instanceof Error ? error.message : undefined)}`);
   }
 
   if (signInResult.error) {
@@ -275,8 +284,8 @@ export async function signUpAction(formData: FormData) {
         }
       }
     });
-  } catch {
-    redirect("/signup?error=auth-failed");
+  } catch (error) {
+    redirect(`/signup?error=${authErrorCode(error instanceof Error ? error.message : undefined)}`);
   }
 
   if (signUpResult.error) {

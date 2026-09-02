@@ -17,6 +17,7 @@ const errorMessages: Record<string, string> = {
   "auth-failed": "Authentication failed. Check the Supabase settings and try again.",
   "database-setup": "Supabase is connected, but the database schema has not been installed correctly.",
   "invalid-credentials": "The email or password is incorrect.",
+  "service-unavailable": "The Supabase project cannot be reached. Restore or restart the project, then try again.",
   "supabase-missing": "Supabase is not configured for this deployment yet."
 };
 
