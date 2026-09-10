@@ -11,12 +11,10 @@ import {
   Gauge,
   History,
   Home,
-  ListChecks,
   PlugZap,
   Settings,
   ShieldAlert,
   SlidersHorizontal,
-  UploadCloud,
   Wrench
 } from "lucide-react";
 
@@ -31,8 +29,6 @@ const navItems = [
   { label: "ATS Tests", href: "/ats-tests", icon: PlugZap, roles: ["admin", "supervisor", "technician"] },
   { label: "ATS Manual", href: "/ats-manual", icon: SlidersHorizontal, roles: ["admin", "supervisor", "technician"] },
   { label: "Maintenance", href: "/maintenance", icon: Wrench, roles: ["admin", "supervisor", "technician"] },
-  { label: "Load Tests", href: "/load-tests", icon: ListChecks, roles: ["admin", "supervisor", "technician"] },
-  { label: "Vibration", href: "/vibration-tests", icon: UploadCloud, roles: ["admin", "supervisor", "technician"] },
   { label: "Reports", href: "/reports", icon: FileBarChart, roles: ["admin", "supervisor", "technician", "viewer"] },
   { label: "Analytics", href: "/analytics", icon: BarChart3, roles: ["admin", "supervisor", "technician", "viewer"] },
   { label: "Alarms", href: "/alarms", icon: ShieldAlert, roles: ["admin", "supervisor", "technician"] },
