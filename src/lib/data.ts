@@ -43,6 +43,8 @@ export type DashboardData = {
   stats: {
     totalGenerators: number;
     maintenanceDue: number;
+    maintenanceOverdue: number;
+    maintenanceCompleted: number;
     latestAlarms: number;
     latestInspections: number;
     averageHealthScore: number;
@@ -50,7 +52,125 @@ export type DashboardData = {
   latestAlarms: GenericRow[];
   latestInspections: GenericRow[];
   trends: typeof demoTrendData;
+  generators: GeneratorAnalyticsItem[];
 };
+
+export type GeneratorAnalyticsItem = {
+  id: string;
+  generatorId: string;
+  label: string;
+  manufacturer: string;
+  model: string;
+  duty: string;
+  status: string;
+  ratedPowerKva: number | null;
+  ratedPowerKw: number | null;
+  ratedVoltage: number | null;
+  ratedCurrent: number | null;
+  frequency: number | null;
+  rpm: number | null;
+  powerFactor: number | null;
+  fuelTankCapacity: number | null;
+  operationTime: number | null;
+  healthScore: number | null;
+  runningHours: number | null;
+  numberOfStarts: number | null;
+  batteryVoltage: number | null;
+  coolantTemperature: number | null;
+};
+
+function numberOrNull(value: unknown) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const numberValue = Number(value);
+  return Number.isFinite(numberValue) ? numberValue : null;
+}
+
+function buildGeneratorAnalytics(generators: GenericRow[], readings: GenericRow[]): GeneratorAnalyticsItem[] {
+  const latestReadingByGenerator = new Map<string, GenericRow>();
+
+  for (const reading of readings) {
+    if (reading.generator_id) {
+      latestReadingByGenerator.set(String(reading.generator_id), reading);
+    }
+  }
+
+  return generators.map((generator) => {
+    const latestReading = latestReadingByGenerator.get(String(generator.id)) ?? latestReadingByGenerator.get(String(generator.generator_id));
+    const generatorId = String(generator.generator_id ?? "Generator");
+    const manufacturer = String(generator.manufacturer ?? "Unknown manufacturer");
+    const model = String(generator.model ?? "");
+
+    return {
+      id: String(generator.id),
+      generatorId,
+      label: `${generatorId} - ${manufacturer}${model ? ` ${model}` : ""}`,
+      manufacturer,
+      model,
+      duty: String(generator.duty ?? "Not set"),
+      status: String(generator.status ?? "Not set"),
+      ratedPowerKva: numberOrNull(generator.rated_power_kva),
+      ratedPowerKw: numberOrNull(generator.rated_power_kw),
+      ratedVoltage: numberOrNull(generator.rated_voltage),
+      ratedCurrent: numberOrNull(generator.rated_current),
+      frequency: numberOrNull(generator.frequency),
+      rpm: numberOrNull(generator.rpm),
+      powerFactor: numberOrNull(generator.power_factor),
+      fuelTankCapacity: numberOrNull(generator.fuel_tank_capacity),
+      operationTime: numberOrNull(generator.operation_time),
+      healthScore: numberOrNull(generator.health_score),
+      runningHours: numberOrNull(latestReading?.running_hours),
+      numberOfStarts: numberOrNull(latestReading?.number_of_starts),
+      batteryVoltage: numberOrNull(latestReading?.battery_voltage),
+      coolantTemperature: numberOrNull(latestReading?.coolant_temperature)
+    };
+  });
+}
+
+function preventiveMaintenanceStats(generators: GenericRow[], maintenanceRecords: GenericRow[]) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayTime = today.getTime();
+  const dueCutoff = todayTime + 30 * 86400000;
+  const latestDueByGenerator = new Map<string, { maintenanceTime: number; dueTime: number }>();
+
+  for (const record of maintenanceRecords) {
+    if (String(record.maintenance_type ?? "").toLowerCase() === "corrective" || !record.generator_id) {
+      continue;
+    }
+
+    const maintenanceTime = typeof record.maintenance_date === "string" ? new Date(record.maintenance_date).getTime() : 0;
+    const dueTime = typeof record.next_due_date === "string" ? new Date(record.next_due_date).getTime() : Number.NaN;
+    const key = String(record.generator_id);
+    const current = latestDueByGenerator.get(key);
+
+    if (Number.isFinite(dueTime) && (!current || maintenanceTime >= current.maintenanceTime)) {
+      latestDueByGenerator.set(key, { maintenanceTime, dueTime });
+    }
+  }
+
+  const dueDates = generators
+    .map((generator) => {
+      const directDue = typeof generator.next_maintenance_due === "string" ? new Date(generator.next_maintenance_due).getTime() : Number.NaN;
+
+      if (Number.isFinite(directDue)) {
+        return directDue;
+      }
+
+      return latestDueByGenerator.get(String(generator.id))?.dueTime ?? latestDueByGenerator.get(String(generator.generator_id))?.dueTime ?? Number.NaN;
+    })
+    .filter(Number.isFinite);
+
+  return {
+    due: dueDates.filter((dueTime) => dueTime >= todayTime && dueTime <= dueCutoff).length,
+    overdue: dueDates.filter((dueTime) => dueTime < todayTime).length,
+    completed: maintenanceRecords.filter(
+      (record) => String(record.maintenance_type ?? "").toLowerCase() !== "corrective" && String(record.approval_status ?? "").toLowerCase() === "approved"
+    ).length
+  };
+}
 
 export async function getDynamicSupabase() {
   const supabase = await createSupabaseServerClient();
@@ -322,45 +442,52 @@ export async function getDashboardData(): Promise<DashboardData> {
     const generators = await getDemoRows("generators");
     const alarms = await getDemoRows("alarms");
     const inspections = await getDemoRows("weekly-inspections");
+    const readings = await getDemoRows("dse-readings");
+    const maintenanceRecords = await getDemoRows("maintenance-records");
+    const maintenance = preventiveMaintenanceStats(generators, maintenanceRecords);
 
     return {
       isDemo: true,
       stats: {
         totalGenerators: generators.length,
-        maintenanceDue: 1,
+        maintenanceDue: maintenance.due,
+        maintenanceOverdue: maintenance.overdue,
+        maintenanceCompleted: maintenance.completed,
         latestAlarms: alarms.length,
         latestInspections: inspections.length,
         averageHealthScore: 82
       },
       latestAlarms: alarms,
       latestInspections: inspections,
-      trends: demoTrendData
+      trends: demoTrendData,
+      generators: buildGeneratorAnalytics(generators, readings)
     };
   }
 
   const supabase = await getDynamicSupabase();
-  const [generatorsResult, alarmsResult, inspectionsResult, readingsResult] = await Promise.all([
+  const [generatorsResult, alarmsResult, inspectionsResult, readingsResult, maintenanceResult] = await Promise.all([
     supabase.from("generators").select("*").order("created_at", { ascending: false }).limit(500),
     supabase.from("alarms").select("*").order("alarm_date", { ascending: false }).limit(8),
     supabase.from("weekly_inspections").select("*").order("inspection_date", { ascending: false }).limit(8),
-    supabase.from("dse_readings").select("*").order("reading_date", { ascending: true }).limit(24)
+    supabase.from("dse_readings").select("*").order("reading_date", { ascending: true }).limit(500),
+    supabase.from("maintenance_records").select("*").order("maintenance_date", { ascending: false }).limit(500)
   ]);
 
   const generators = generatorsResult.data ?? [];
   const alarms = alarmsResult.data ?? [];
   const inspections = inspectionsResult.data ?? [];
   const readings = readingsResult.data ?? [];
-  const dueCutoff = Date.now() + 30 * 86400000;
+  const maintenanceRecords = maintenanceResult.data ?? [];
+  const maintenance = preventiveMaintenanceStats(generators, maintenanceRecords);
   const healthScores = generators.map((row) => Number(row.health_score)).filter((value) => !Number.isNaN(value));
 
   return {
     isDemo: false,
     stats: {
       totalGenerators: generators.length,
-      maintenanceDue: generators.filter((row) => {
-        const dueDate = typeof row.next_maintenance_due === "string" ? new Date(row.next_maintenance_due).getTime() : Number.POSITIVE_INFINITY;
-        return dueDate <= dueCutoff;
-      }).length,
+      maintenanceDue: maintenance.due,
+      maintenanceOverdue: maintenance.overdue,
+      maintenanceCompleted: maintenance.completed,
       latestAlarms: alarms.filter((row) => row.resolved !== true).length,
       latestInspections: inspections.length,
       averageHealthScore: healthScores.length
@@ -369,12 +496,13 @@ export async function getDashboardData(): Promise<DashboardData> {
     },
     latestAlarms: alarms,
     latestInspections: inspections,
-    trends: readings.map((row, index) => ({
+    trends: readings.slice(-24).map((row, index) => ({
       period: typeof row.reading_date === "string" ? row.reading_date.slice(5, 10) : `R${index + 1}`,
       runningHours: Number(row.running_hours ?? 0),
       batteryVoltage: Number(row.battery_voltage ?? 0),
       coolantTemperature: Number(row.coolant_temperature ?? 0),
       starts: Number(row.number_of_starts ?? 0)
-    }))
+    })),
+    generators: buildGeneratorAnalytics(generators, readings)
   };
 }

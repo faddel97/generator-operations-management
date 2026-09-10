@@ -38,7 +38,17 @@ export async function getLocalDemoRows(moduleKey: ModuleKey) {
 
 export async function getDemoRows(moduleKey: ModuleKey) {
   const localRows = await getLocalDemoRows(moduleKey);
-  return [...localRows, ...(demoModuleRows[moduleKey] ?? [])];
+  const rowsById = new Map<string, GenericRow>();
+
+  for (const row of demoModuleRows[moduleKey] ?? []) {
+    rowsById.set(String(row.id), row);
+  }
+
+  for (const row of localRows) {
+    rowsById.set(String(row.id), row);
+  }
+
+  return [...rowsById.values()];
 }
 
 export async function getDemoRecord(moduleKey: ModuleKey, id: string) {
