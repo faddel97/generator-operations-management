@@ -8,7 +8,6 @@ import {
   CartesianGrid,
   Cell,
   LabelList,
-  Legend,
   Line,
   LineChart,
   Pie,
@@ -101,21 +100,31 @@ function ChartTypeControl({ value, onChange }: { value: ChartType; onChange: (va
   );
 }
 
-function DonutChart({ data, centerLabel }: { data: ChartDatum[]; centerLabel: string }) {
+function DonutChart({ data, centerLabel, compact = false }: { data: ChartDatum[]; centerLabel: string; compact?: boolean }) {
   return (
-    <div className="relative h-[410px] min-w-[620px]">
+    <div className={`relative ${compact ? "h-64 min-w-[340px]" : "h-[340px] min-w-[620px]"}`}>
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
-          <Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="44%" innerRadius={82} outerRadius={132} paddingAngle={2} stroke="#ffffff" strokeWidth={3}>
+          <Pie
+            data={data}
+            dataKey="value"
+            nameKey="name"
+            cx="50%"
+            cy="50%"
+            innerRadius={compact ? 58 : 76}
+            outerRadius={compact ? 98 : 126}
+            paddingAngle={2}
+            stroke="#ffffff"
+            strokeWidth={3}
+          >
             {data.map((item, index) => (
               <Cell key={`${item.name}-${index}`} fill={chartColors[index % chartColors.length]} />
             ))}
           </Pie>
           <Tooltip formatter={(value, _name, item) => [String(item.payload.valueLabel ?? value), item.payload.name]} />
-          <Legend iconType="circle" verticalAlign="bottom" wrapperStyle={{ fontSize: 12, lineHeight: "22px" }} />
         </PieChart>
       </ResponsiveContainer>
-      <div className="pointer-events-none absolute left-1/2 top-[44%] w-36 -translate-x-1/2 -translate-y-1/2 text-center">
+      <div className="pointer-events-none absolute left-1/2 top-1/2 w-32 -translate-x-1/2 -translate-y-1/2 text-center">
         <p className="text-xs font-semibold uppercase text-slate-500">Current view</p>
         <p className="mt-1 text-sm font-bold text-slate-950">{centerLabel}</p>
       </div>
@@ -123,14 +132,86 @@ function DonutChart({ data, centerLabel }: { data: ChartDatum[]; centerLabel: st
   );
 }
 
+function ChartValues({ data }: { data: ChartDatum[] }) {
+  return (
+    <div className="grid gap-2 border-t border-slate-100 pt-3 sm:grid-cols-2">
+      {data.map((item, index) => (
+        <div key={`${item.name}-${index}`} className="flex min-w-0 items-center justify-between gap-3 text-xs">
+          <span className="flex min-w-0 items-center gap-2 text-slate-600">
+            <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: chartColors[index % chartColors.length] }} aria-hidden="true" />
+            <span className="truncate">{item.name}</span>
+          </span>
+          <strong className="shrink-0 text-slate-950">{item.valueLabel}</strong>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function FeatureComparisonChart({
+  metric,
+  data,
+  chartType
+}: {
+  metric: (typeof metrics)[number];
+  data: ChartDatum[];
+  chartType: ChartType;
+}) {
+  const chartMinWidth = Math.max(380, data.length * 90);
+
+  return (
+    <section className="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+      <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
+        <div>
+          <p className="text-xs font-semibold uppercase text-teal-700">Generator feature</p>
+          <h4 className="mt-1 text-base font-semibold text-slate-950">
+            {metric.label}{metric.unit ? ` (${metric.unit})` : ""}
+          </h4>
+        </div>
+        <span className="text-xs font-medium text-slate-500">{data.length} recorded</span>
+      </div>
+      <div className="overflow-x-auto px-4 pb-4">
+        {chartType === "donut" ? <DonutChart data={data} centerLabel={metric.label} compact /> : null}
+        {chartType === "bar" ? (
+          <div className="h-64" style={{ minWidth: `${chartMinWidth}px` }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data} margin={{ top: 28, right: 14, bottom: 8, left: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                <XAxis dataKey="name" stroke="#64748b" tick={{ fontSize: 11 }} interval={0} />
+                <YAxis stroke="#64748b" tick={{ fontSize: 11 }} />
+                <Tooltip formatter={(value, _name, item) => [String(item.payload.valueLabel ?? value), metric.label]} />
+                <Bar dataKey="value" name={metric.label} fill="#2563eb" radius={[4, 4, 0, 0]} maxBarSize={46}>
+                  <LabelList dataKey="valueLabel" position="top" fill="#334155" fontSize={11} />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        ) : null}
+        {chartType === "line" ? (
+          <div className="h-64" style={{ minWidth: `${chartMinWidth}px` }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={data} margin={{ top: 22, right: 22, bottom: 8, left: 4 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="name" stroke="#64748b" tick={{ fontSize: 11 }} interval={0} />
+                <YAxis stroke="#64748b" tick={{ fontSize: 11 }} />
+                <Tooltip formatter={(value, _name, item) => [String(item.payload.valueLabel ?? value), metric.label]} />
+                <Line type="monotone" dataKey="value" name={metric.label} stroke="#ca8a04" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        ) : null}
+        <ChartValues data={data} />
+      </div>
+    </section>
+  );
+}
+
 function GeneratorAnalytics({ generators }: { generators: GeneratorAnalyticsItem[] }) {
-  const [view, setView] = useState<"profile" | "compare">("profile");
+  const [view, setView] = useState<"profile" | "compare">("compare");
   const [chartType, setChartType] = useState<ChartType>("donut");
   const [selectedGeneratorId, setSelectedGeneratorId] = useState(generators[0]?.id ?? "");
   const availableMetrics = useMemo(() => metrics.filter((metric) => generators.some((generator) => generator[metric.key] !== null)), [generators]);
-  const [selectedMetricKey, setSelectedMetricKey] = useState<NumericMetricKey>("ratedPowerKva");
   const selectedGenerator = generators.find((generator) => generator.id === selectedGeneratorId) ?? generators[0];
-  const selectedMetric = availableMetrics.find((metric) => metric.key === selectedMetricKey) ?? availableMetrics[0];
 
   const profileData = useMemo(() => {
     if (!selectedGenerator) {
@@ -157,18 +238,19 @@ function GeneratorAnalytics({ generators }: { generators: GeneratorAnalyticsItem
     });
   }, [availableMetrics, generators, selectedGenerator]);
 
-  const comparisonData = useMemo(() => {
-    if (!selectedMetric) {
-      return [];
-    }
-
-    return generators.flatMap((generator) => {
-      const value = generator[selectedMetric.key];
-      return value === null
-        ? []
-        : [{ name: generator.generatorId, generator: generator.generatorId, value, valueLabel: displayValue(value, selectedMetric.unit) }];
-    });
-  }, [generators, selectedMetric]);
+  const comparisonCharts = useMemo(
+    () =>
+      availableMetrics
+        .map((metric) => ({
+          metric,
+          data: generators.flatMap((generator) => {
+            const value = generator[metric.key];
+            return value === null ? [] : [{ name: generator.generatorId, value, valueLabel: displayValue(value, metric.unit) }];
+          })
+        }))
+        .filter((chart) => chart.data.length > 0),
+    [availableMetrics, generators]
+  );
 
   if (generators.length === 0) {
     return (
@@ -207,7 +289,7 @@ function GeneratorAnalytics({ generators }: { generators: GeneratorAnalyticsItem
             className={`inline-flex min-h-9 items-center gap-2 rounded px-3 text-sm font-semibold ${view === "compare" ? "bg-white text-slate-950 shadow-sm" : "text-slate-200 hover:text-white"}`}
           >
             <BarChart3 className="h-4 w-4" aria-hidden="true" />
-            Compare feature
+            All generator stats
           </button>
         </div>
       </div>
@@ -281,6 +363,9 @@ function GeneratorAnalytics({ generators }: { generators: GeneratorAnalyticsItem
                   </ResponsiveContainer>
                 </div>
               ) : null}
+              <div className="min-w-[620px]">
+                <ChartValues data={profileData.map((item) => ({ name: item.name, value: item.relativeValue, valueLabel: item.valueLabel }))} />
+              </div>
             </div>
           ) : (
             <p className="py-10 text-center text-sm text-slate-600">No numeric specifications or monitoring readings are recorded for this generator.</p>
@@ -289,58 +374,20 @@ function GeneratorAnalytics({ generators }: { generators: GeneratorAnalyticsItem
       ) : null}
 
       {view === "compare" ? (
-        <div className="p-5">
-          <div className="flex flex-col gap-4 sm:flex-row">
-            <label className="block">
-              <span className="mb-1.5 block text-xs font-semibold uppercase text-slate-500">Feature</span>
-              <select
-                value={selectedMetric?.key ?? ""}
-                onChange={(event) => setSelectedMetricKey(event.target.value as NumericMetricKey)}
-                className="form-input min-h-11"
-              >
-                {availableMetrics.map((metric) => (
-                  <option key={metric.key} value={metric.key}>
-                    {metric.label}{metric.unit ? ` (${metric.unit})` : ""}
-                  </option>
-                ))}
-              </select>
-            </label>
+        <div className="bg-slate-50 p-5">
+          <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-slate-950">All recorded generator features</p>
+              <p className="mt-1 text-sm text-slate-600">Each panel compares the same feature across every generator that has a recorded value.</p>
+            </div>
             <ChartTypeControl value={chartType} onChange={setChartType} />
           </div>
 
-          {comparisonData.length ? (
-            <div className="mt-5 overflow-x-auto border-t border-slate-200 pt-5">
-              {chartType === "donut" ? (
-                <DonutChart data={comparisonData} centerLabel={selectedMetric?.label ?? "Feature"} />
-              ) : null}
-              {chartType === "bar" ? (
-                <div className="h-80" style={{ minWidth: `${Math.max(680, comparisonData.length * 100)}px` }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={comparisonData} margin={{ top: 12, right: 16, bottom: 8, left: 4 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-                      <XAxis dataKey="generator" stroke="#64748b" tick={{ fontSize: 12 }} interval={0} />
-                      <YAxis stroke="#64748b" tick={{ fontSize: 12 }} />
-                      <Tooltip formatter={(value, _name, item) => [String(item.payload.valueLabel ?? value), selectedMetric?.label ?? "Value"]} />
-                      <Bar dataKey="value" name={selectedMetric?.label ?? "Value"} fill="#2563eb" radius={[4, 4, 0, 0]} maxBarSize={54}>
-                        <LabelList dataKey="valueLabel" position="top" fill="#334155" fontSize={12} />
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : null}
-              {chartType === "line" ? (
-                <div className="h-80" style={{ minWidth: `${Math.max(680, comparisonData.length * 100)}px` }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={comparisonData} margin={{ top: 18, right: 24, bottom: 8, left: 4 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                      <XAxis dataKey="generator" stroke="#64748b" tick={{ fontSize: 12 }} interval={0} />
-                      <YAxis stroke="#64748b" tick={{ fontSize: 12 }} />
-                      <Tooltip formatter={(value, _name, item) => [String(item.payload.valueLabel ?? value), selectedMetric?.label ?? "Value"]} />
-                      <Line type="monotone" dataKey="value" name={selectedMetric?.label ?? "Value"} stroke="#ca8a04" strokeWidth={3} dot={{ r: 5 }} activeDot={{ r: 7 }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : null}
+          {comparisonCharts.length ? (
+            <div className="mt-5 grid gap-5 xl:grid-cols-2">
+              {comparisonCharts.map((chart) => (
+                <FeatureComparisonChart key={chart.metric.key} metric={chart.metric} data={chart.data} chartType={chartType} />
+              ))}
             </div>
           ) : (
             <p className="py-10 text-center text-sm text-slate-600">No recorded values are available for comparison.</p>
@@ -352,7 +399,7 @@ function GeneratorAnalytics({ generators }: { generators: GeneratorAnalyticsItem
 }
 
 export function AnalyticsWorkspace({ trends, generators }: { trends: typeof demoTrendData; generators: GeneratorAnalyticsItem[] }) {
-  const [mode, setMode] = useState<AnalyticsMode>("fleet");
+  const [mode, setMode] = useState<AnalyticsMode>("generators");
 
   return (
     <div className="space-y-5">
