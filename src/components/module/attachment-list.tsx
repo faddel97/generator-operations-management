@@ -1,7 +1,11 @@
 import type { UploadedAttachment } from "@/types/app";
 
 function isImageAttachment(attachment: UploadedAttachment) {
-  return attachment.bucket === "generator-photos" || /\.(png|jpe?g|webp|gif)$/i.test(attachment.path);
+  return /\.(png|jpe?g|webp|gif)$/i.test(attachment.path);
+}
+
+function isVideoAttachment(attachment: UploadedAttachment) {
+  return /\.(mp4|webm|mov|m4v)$/i.test(attachment.path);
 }
 
 function formatUploadedDate(value?: string) {
@@ -31,6 +35,7 @@ export function AttachmentList({ attachments, compact = false }: { attachments: 
       {attachments.map((attachment) => {
         const uploadedDate = formatUploadedDate(attachment.createdAt);
         const imagePreview = attachment.url && isImageAttachment(attachment);
+        const videoPreview = attachment.url && isVideoAttachment(attachment);
 
         return (
           <div key={`${attachment.bucket}:${attachment.path}`} className="rounded-md border border-slate-200 bg-slate-50 p-3">
@@ -44,6 +49,9 @@ export function AttachmentList({ attachments, compact = false }: { attachments: 
                   style={{ backgroundImage: `url(${attachment.url})` }}
                   aria-label={`Open ${attachment.fileName}`}
                 />
+              ) : null}
+              {videoPreview ? (
+                <video controls preload="metadata" className="h-24 w-40 shrink-0 rounded-md border border-slate-200 bg-black" src={attachment.url} />
               ) : null}
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-semibold text-slate-900">{attachment.fileName}</div>

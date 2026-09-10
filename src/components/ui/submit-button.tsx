@@ -2,7 +2,15 @@
 
 import { useFormStatus } from "react-dom";
 
-export function SubmitButton({ children, variant = "primary" }: { children: React.ReactNode; variant?: "primary" | "danger" | "secondary" }) {
+export function SubmitButton({
+  children,
+  variant = "primary",
+  disabled = false
+}: {
+  children: React.ReactNode;
+  variant?: "primary" | "danger" | "secondary";
+  disabled?: boolean;
+}) {
   const { pending } = useFormStatus();
   const styles = {
     primary: "bg-teal-700 text-white hover:bg-teal-800",
@@ -13,7 +21,7 @@ export function SubmitButton({ children, variant = "primary" }: { children: Reac
   return (
     <button
       type="submit"
-      disabled={pending}
+      disabled={pending || disabled}
       className={`inline-flex min-h-10 items-center justify-center rounded-md px-4 text-sm font-semibold transition disabled:opacity-60 ${styles[variant]}`}
     >
       {pending ? "Working..." : children}

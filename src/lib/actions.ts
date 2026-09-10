@@ -21,6 +21,11 @@ type ChecklistPayloadItem = {
   photo_path?: string;
 };
 
+type DirectUpload = {
+  fieldName: string;
+  path: string;
+};
+
 function authErrorCode(message?: string) {
   const normalized = message?.toLowerCase() ?? "";
 
@@ -51,6 +56,36 @@ function authErrorCode(message?: string) {
 function formString(formData: FormData, name: string) {
   const value = formData.get(name);
   return typeof value === "string" ? value.trim() : "";
+}
+
+function parseDirectUploads(formData: FormData): DirectUpload[] {
+  const raw = formString(formData, "uploadedAttachments");
+  if (!raw) {
+    return [];
+  }
+
+  try {
+    const value = JSON.parse(raw) as unknown;
+    if (!Array.isArray(value)) {
+      return [];
+    }
+
+    return value.filter(
+      (item): item is DirectUpload =>
+        Boolean(
+          item &&
+            typeof item === "object" &&
+            typeof (item as DirectUpload).fieldName === "string" &&
+            typeof (item as DirectUpload).path === "string"
+        )
+    );
+  } catch {
+    return [];
+  }
+}
+
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
 function parseScalarField(formData: FormData, field: FieldDefinition) {
@@ -311,6 +346,8 @@ export async function signOutAction() {
 export async function saveModuleRecordAction(formData: FormData) {
   const moduleKey = formString(formData, "moduleKey") as ModuleKey;
   const recordId = formString(formData, "recordId");
+  const directUploads = parseDirectUploads(formData);
+  const uploadRecordId = formString(formData, "uploadRecordId");
   const definition = getModuleDefinition(moduleKey);
   const context = await requireAuthenticated();
   const supabaseConfigured = isSupabaseConfigured();
@@ -373,6 +410,13 @@ export async function saveModuleRecordAction(formData: FormData) {
     payload.approval_status = "submitted";
   }
 
+  if (!recordId && directUploads.length > 0) {
+    if (!isUuid(uploadRecordId)) {
+      throw new Error("The attachment record ID is invalid.");
+    }
+    payload.id = uploadRecordId;
+  }
+
   if (!supabaseConfigured) {
     await saveLocalDemoRecord(moduleKey, payload, recordId || undefined);
     revalidatePath(definition.path);
@@ -391,65 +435,117 @@ export async function saveModuleRecordAction(formData: FormData) {
     throw new Error(saved.error?.message ?? "Unable to save record.");
   }
 
-  const savedId = String(saved.data.id);
+  const savedRecord = saved.data;
+  const savedId = String(savedRecord.id);
   const fileColumnUpdates: Record<string, unknown> = {};
+  let uploadedFileCount = 0;
 
-  for (const field of definition.fields.filter((item) => item.type === "file")) {
-    const uploadedPaths = await uploadFieldFiles({
-      formData,
-      field,
-      moduleKey,
-      recordId: savedId,
-      userId: context.userId
-    });
-
-    if (field.targetColumn && uploadedPaths.length > 0) {
-      const existingPaths = extractStoragePaths((existingRecord ?? saved.data)[field.targetColumn]);
-      fileColumnUpdates[field.targetColumn] = field.multiple ? [...existingPaths, ...uploadedPaths] : uploadedPaths[0];
+  function addFileColumnUpdate(field: FieldDefinition, uploadedPaths: string[]) {
+    if (!field.targetColumn || uploadedPaths.length === 0) {
+      return;
     }
+
+    const existingPaths = extractStoragePaths((existingRecord ?? savedRecord)[field.targetColumn]);
+    const pendingPaths = extractStoragePaths(fileColumnUpdates[field.targetColumn]);
+    const nextPaths = [...pendingPaths, ...uploadedPaths];
+    fileColumnUpdates[field.targetColumn] = field.multiple ? [...existingPaths, ...nextPaths] : nextPaths.at(-1);
   }
 
-  for (const field of definition.fields.filter((item) => item.type === "checklist")) {
-    const checklist = payload[field.name];
-    if (!checklist || typeof checklist !== "object" || Array.isArray(checklist)) {
-      continue;
+  try {
+    for (const field of definition.fields.filter((item) => item.type === "file")) {
+      const uploadedPaths = await uploadFieldFiles({
+        formData,
+        field,
+        moduleKey,
+        recordId: savedId,
+        userId: context.userId
+      });
+      uploadedFileCount += uploadedPaths.length;
+      addFileColumnUpdate(field, uploadedPaths);
     }
 
-    let hasChecklistPhotos = false;
-    const nextChecklist = { ...(checklist as Record<string, Record<string, unknown>>) };
+    for (const upload of directUploads) {
+      const field = definition.fields.find((item) => item.type === "file" && item.name === upload.fieldName);
+      if (!field?.storageBucket || !upload.path.startsWith(`${moduleKey}/${savedId}/`)) {
+        throw new Error("An uploaded attachment could not be validated.");
+      }
 
-    for (const item of field.checklistItems ?? []) {
-      const photoPath = await uploadNamedFile({
-        formData,
-        fieldName: `${field.name}.${item.key}.photo`,
-        moduleKey,
-        recordId: savedId
-      });
+      if (field.storageTable === "generator_photos") {
+        const insertResult = await supabase.from("generator_photos").insert({
+          generator_id: savedId,
+          photo_type: field.storageType ?? field.name,
+          file_path: upload.path,
+          uploaded_by: context.userId
+        }).select("*").single();
+        if (insertResult.error) {
+          throw new Error(insertResult.error.message);
+        }
+      }
 
-      if (photoPath) {
-        nextChecklist[item.key] = {
-          ...(nextChecklist[item.key] ?? {}),
-          photo_path: photoPath
-        };
-        hasChecklistPhotos = true;
+      if (field.storageTable === "generator_files") {
+        const insertResult = await supabase.from("generator_files").insert({
+          generator_id: savedId,
+          file_type: field.storageType ?? field.name,
+          file_path: upload.path,
+          uploaded_by: context.userId
+        }).select("*").single();
+        if (insertResult.error) {
+          throw new Error(insertResult.error.message);
+        }
+      }
+
+      addFileColumnUpdate(field, [upload.path]);
+      uploadedFileCount += 1;
+    }
+
+    for (const field of definition.fields.filter((item) => item.type === "checklist")) {
+      const checklist = payload[field.name];
+      if (!checklist || typeof checklist !== "object" || Array.isArray(checklist)) {
+        continue;
+      }
+
+      let hasChecklistPhotos = false;
+      const nextChecklist = { ...(checklist as Record<string, Record<string, unknown>>) };
+
+      for (const item of field.checklistItems ?? []) {
+        const photoPath = await uploadNamedFile({
+          formData,
+          fieldName: `${field.name}.${item.key}.photo`,
+          moduleKey,
+          recordId: savedId
+        });
+
+        if (photoPath) {
+          nextChecklist[item.key] = {
+            ...(nextChecklist[item.key] ?? {}),
+            photo_path: photoPath
+          };
+          hasChecklistPhotos = true;
+          uploadedFileCount += 1;
+        }
+      }
+
+      if (hasChecklistPhotos) {
+        fileColumnUpdates[field.name] = nextChecklist;
       }
     }
 
-    if (hasChecklistPhotos) {
-      fileColumnUpdates[field.name] = nextChecklist;
+    if (Object.keys(fileColumnUpdates).length > 0) {
+      const updateResult = await supabase.from(definition.table).update(fileColumnUpdates).eq("id", savedId).select("*").single();
+      if (updateResult.error) {
+        throw new Error(updateResult.error.message);
+      }
     }
-  }
-
-  if (Object.keys(fileColumnUpdates).length > 0) {
-    const updateResult = await supabase.from(definition.table).update(fileColumnUpdates).eq("id", savedId).select("*").single();
-    if (updateResult.error) {
-      throw new Error(updateResult.error.message);
-    }
+  } catch (error) {
+    console.error("Attachment upload or assignment failed", error);
+    revalidatePath(definition.path);
+    redirect(`${definition.path}?saved=${recordId ? "updated" : "created"}&actionError=upload-failed`);
   }
 
   revalidatePath(definition.path);
   revalidatePath(`${definition.path}/${savedId}`);
-  redirect(`${definition.path}?saved=${recordId ? "updated" : "created"}`);
+  const savedState = uploadedFileCount > 0 ? `${recordId ? "updated" : "created"}-with-attachments` : recordId ? "updated" : "created";
+  redirect(`${definition.path}?saved=${savedState}`);
 }
 
 export async function deleteModuleRecordAction(formData: FormData) {

@@ -1,11 +1,20 @@
+"use client";
+
 import Link from "next/link";
+import { useRef, useState, type FormEvent } from "react";
 
 import { AttachmentList } from "@/components/module/attachment-list";
 import { saveModuleRecordAction } from "@/lib/actions";
 import { humanize, todayIsoDate } from "@/lib/format";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type { AttachmentMap, FieldDefinition, GeneratorOption, ModuleDefinition } from "@/types/app";
 import type { GenericRow } from "@/types/database";
 import { SubmitButton } from "@/components/ui/submit-button";
+
+function safeUploadFileName(name: string) {
+  return name.replace(/[^a-zA-Z0-9._-]/g, "-").replace(/-+/g, "-");
+}
 
 function fieldValue(record: GenericRow | null | undefined, field: FieldDefinition) {
   const value = record?.[field.name];
@@ -126,6 +135,8 @@ function FieldControl({
           type="file"
           accept={field.accept}
           multiple={field.multiple}
+          data-direct-upload={field.storageBucket ? "true" : undefined}
+          data-storage-bucket={field.storageBucket}
           className="block w-full rounded-md border border-dashed border-slate-300 bg-white px-3 py-3 text-sm text-slate-700 file:mr-4 file:rounded-md file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white"
         />
         <AttachmentList attachments={fieldAttachments} compact />
@@ -221,11 +232,85 @@ export function ModuleForm({
   attachments?: AttachmentMap;
 }) {
   const sections = groupBySection(definition.fields);
+  const uploadRecordIdRef = useRef<HTMLInputElement>(null);
+  const uploadedAttachmentsRef = useRef<HTMLInputElement>(null);
+  const submitAfterUploadRef = useRef(false);
+  const [uploadStatus, setUploadStatus] = useState<"idle" | "uploading" | "error">("idle");
+  const [uploadMessage, setUploadMessage] = useState("");
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    if (submitAfterUploadRef.current) {
+      submitAfterUploadRef.current = false;
+      return;
+    }
+
+    if (!isSupabaseConfigured()) {
+      return;
+    }
+
+    const form = event.currentTarget;
+    const fileInputs = Array.from(form.querySelectorAll<HTMLInputElement>('input[type="file"][data-direct-upload="true"]'));
+    const selectedFiles = fileInputs.flatMap((input) => Array.from(input.files ?? []).map((file) => ({ input, file })));
+
+    if (selectedFiles.length === 0) {
+      return;
+    }
+
+    event.preventDefault();
+    setUploadStatus("uploading");
+    setUploadMessage(`Uploading 0 of ${selectedFiles.length} files...`);
+
+    const uploadRecordId = String(record?.id ?? crypto.randomUUID());
+    const supabase = createSupabaseBrowserClient();
+    const uploadedAttachments: Array<{ fieldName: string; path: string }> = [];
+
+    try {
+      for (const [index, selection] of selectedFiles.entries()) {
+        const bucket = selection.input.dataset.storageBucket;
+        if (!bucket) {
+          throw new Error("The upload destination is missing.");
+        }
+
+        const path = `${definition.key}/${uploadRecordId}/${crypto.randomUUID()}-${safeUploadFileName(selection.file.name)}`;
+        const { error } = await supabase.storage.from(bucket).upload(path, selection.file, {
+          cacheControl: "3600",
+          contentType: selection.file.type || undefined,
+          upsert: false
+        });
+
+        if (error) {
+          throw new Error(`${selection.file.name}: ${error.message}`);
+        }
+
+        uploadedAttachments.push({ fieldName: selection.input.name, path });
+        setUploadMessage(`Uploading ${index + 1} of ${selectedFiles.length} files...`);
+      }
+
+      if (uploadRecordIdRef.current) {
+        uploadRecordIdRef.current.value = uploadRecordId;
+      }
+      if (uploadedAttachmentsRef.current) {
+        uploadedAttachmentsRef.current.value = JSON.stringify(uploadedAttachments);
+      }
+
+      fileInputs.forEach((input) => {
+        input.value = "";
+      });
+      setUploadMessage("Files uploaded. Assigning them to the record...");
+      submitAfterUploadRef.current = true;
+      form.requestSubmit();
+    } catch (error) {
+      setUploadStatus("error");
+      setUploadMessage(error instanceof Error ? `Upload failed: ${error.message}` : "Upload failed. Check Supabase Storage and try again.");
+    }
+  }
 
   return (
-    <form action={saveModuleRecordAction} className="space-y-5">
+    <form action={saveModuleRecordAction} onSubmit={handleSubmit} className="space-y-5">
       <input type="hidden" name="moduleKey" value={definition.key} />
       {record?.id ? <input type="hidden" name="recordId" value={String(record.id)} /> : null}
+      <input ref={uploadRecordIdRef} type="hidden" name="uploadRecordId" defaultValue={record?.id ? String(record.id) : ""} />
+      <input ref={uploadedAttachmentsRef} type="hidden" name="uploadedAttachments" defaultValue="[]" />
       {sections.map(([section, fields]) => (
         <section key={section} className="rounded-md border border-slate-200 bg-white">
           <div className="border-b border-slate-200 px-5 py-4">
@@ -248,11 +333,23 @@ export function ModuleForm({
           </div>
         </section>
       ))}
+      {uploadMessage ? (
+        <div
+          role={uploadStatus === "error" ? "alert" : "status"}
+          className={`rounded-md border px-4 py-3 text-sm ${
+            uploadStatus === "error" ? "border-red-200 bg-red-50 text-red-800" : "border-teal-200 bg-teal-50 text-teal-900"
+          }`}
+        >
+          {uploadMessage}
+        </div>
+      ) : null}
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         <Link href={definition.path} className="inline-flex min-h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 hover:bg-slate-50">
           Cancel
         </Link>
-        <SubmitButton>{record?.id ? `Update ${humanize(definition.singularTitle)}` : `Save ${humanize(definition.singularTitle)}`}</SubmitButton>
+        <SubmitButton disabled={uploadStatus === "uploading"}>
+          {uploadStatus === "uploading" ? "Uploading..." : record?.id ? `Update ${humanize(definition.singularTitle)}` : `Save ${humanize(definition.singularTitle)}`}
+        </SubmitButton>
       </div>
     </form>
   );

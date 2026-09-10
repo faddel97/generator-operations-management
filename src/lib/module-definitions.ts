@@ -228,7 +228,17 @@ const generatorFields: FieldDefinition[] = [
   { name: "alternator_nameplate", label: "Alternator Nameplate", type: "file", accept: "image/*", storageBucket: "generator-photos", storageTable: "generator_photos", storageType: "alternator_nameplate", section: "Photos" },
   { name: "dse_controller_photo", label: "DSE Controller", type: "file", accept: "image/*", storageBucket: "generator-photos", storageTable: "generator_photos", storageType: "dse_controller", section: "Photos" },
   { name: "fuel_tank_plate", label: "Fuel Tank Plate", type: "file", accept: "image/*", storageBucket: "generator-photos", storageTable: "generator_photos", storageType: "fuel_tank_plate", section: "Photos" },
-  { name: "generator_photos", label: "Generator Photos", type: "file", accept: "image/*", multiple: true, storageBucket: "generator-photos", storageTable: "generator_photos", storageType: "generator_photo", section: "Photos" },
+  {
+    name: "generator_photos",
+    label: "Generator Photos and Videos",
+    type: "file",
+    accept: "image/*,video/mp4,video/webm,video/quicktime",
+    multiple: true,
+    storageBucket: "generator-photos",
+    storageTable: "generator_photos",
+    storageType: "generator_photo",
+    section: "Photos"
+  },
   { name: "backup_dse", label: "Backup DSE", type: "file", storageBucket: "generator-files", storageTable: "generator_files", storageType: "backup_dse", section: "Files" },
   { name: "wiring_diagram", label: "Wiring Diagram", type: "file", storageBucket: "generator-files", storageTable: "generator_files", storageType: "wiring_diagram", section: "Diagrams" },
   { name: "ats_diagram", label: "ATS Diagram", type: "file", storageBucket: "generator-files", storageTable: "generator_files", storageType: "ats_diagram", section: "Diagrams" },

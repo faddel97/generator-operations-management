@@ -18,16 +18,28 @@ export function moduleActionErrorMessage(actionError?: string) {
     return "Delete failed because the database rejected the request. Run supabase/allow-generator-delete-with-audit.sql in Supabase SQL Editor, then try again.";
   }
 
+  if (actionError === "upload-failed") {
+    return "The record was saved, but Supabase rejected one or more attachments. Run the latest storage repair SQL, then edit the record and upload the files again.";
+  }
+
   return null;
 }
 
 export function moduleSaveMessage(saved?: string) {
   if (saved === "created") {
-    return "Record saved successfully. Any uploaded photos or files were attached to it.";
+    return "Record saved successfully.";
   }
 
   if (saved === "updated") {
-    return "Record updated successfully. Any uploaded photos or files were attached to it.";
+    return "Record updated successfully.";
+  }
+
+  if (saved === "created-with-attachments") {
+    return "Record saved successfully. The uploaded photos, files, or videos were assigned to it.";
+  }
+
+  if (saved === "updated-with-attachments") {
+    return "Record updated successfully. The uploaded photos, files, or videos were assigned to it.";
   }
 
   return null;

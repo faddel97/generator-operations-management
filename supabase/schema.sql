@@ -841,10 +841,14 @@ using (public.is_admin());
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values
-  ('generator-photos', 'generator-photos', false, 10485760, array['image/png', 'image/jpeg', 'image/webp']),
-  ('generator-files', 'generator-files', false, 52428800, array['application/pdf', 'text/plain', 'application/octet-stream', 'application/zip']),
+  ('generator-photos', 'generator-photos', false, 52428800, array['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'video/mp4', 'video/webm', 'video/quicktime']),
+  ('generator-files', 'generator-files', false, 52428800, null),
   ('operation-attachments', 'operation-attachments', false, 52428800, array['image/png', 'image/jpeg', 'image/webp', 'application/pdf', 'text/plain', 'application/octet-stream', 'application/zip'])
-on conflict (id) do nothing;
+on conflict (id) do update set
+  name = excluded.name,
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
 
 drop policy if exists "operations storage read" on storage.objects;
 create policy "operations storage read"
