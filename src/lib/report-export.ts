@@ -13,7 +13,7 @@ export const reportExportConfigs: Record<ReportExportType, { label: string; modu
   },
   monthly: {
     label: "Monthly Report",
-    modules: ["generators", "weekly-inspections", "dse-readings", "ats-tests", "maintenance-records", "load-tests", "vibration-tests", "alarms"]
+    modules: ["generators", "weekly-inspections", "dse-readings", "ats-tests", "maintenance-records", "alarms"]
   },
   generator_health: {
     label: "Generator Health Report",

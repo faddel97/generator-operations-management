@@ -166,8 +166,6 @@ export type Database = {
       ats_tests: GenericRecordTable;
       ats_manual_operations: GenericRecordTable;
       maintenance_records: GenericRecordTable;
-      load_tests: GenericRecordTable;
-      vibration_tests: GenericRecordTable;
       alarms: GenericRecordTable;
       event_logs: GenericRecordTable;
       approvals: GenericRecordTable;

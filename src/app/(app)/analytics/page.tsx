@@ -27,7 +27,7 @@ export default async function AnalyticsPage() {
         <div className="mt-4 grid gap-3 md:grid-cols-3">
           <div className="rounded-md border border-slate-200 p-4">
             <p className="text-sm font-semibold text-slate-900">Review recurring alarms</p>
-            <p className="mt-2 text-sm text-slate-600">Prioritize unresolved critical and warning alarms before scheduled load tests.</p>
+            <p className="mt-2 text-sm text-slate-600">Prioritize unresolved critical and warning alarms before scheduled maintenance work.</p>
           </div>
           <div className="rounded-md border border-slate-200 p-4">
             <p className="text-sm font-semibold text-slate-900">Watch battery voltage</p>

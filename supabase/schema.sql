@@ -226,44 +226,6 @@ exception
   when duplicate_object then null;
 end $$;
 
-create table if not exists public.load_tests (
-  id uuid primary key default gen_random_uuid(),
-  generator_id uuid not null references public.generators(id) on delete cascade,
-  test_date date not null default current_date,
-  load_level integer not null check (load_level in (80, 90, 100, 110)),
-  approval_reference text,
-  voltage numeric,
-  frequency numeric,
-  current numeric,
-  kw numeric,
-  kva numeric,
-  power_factor numeric,
-  oil_pressure numeric,
-  coolant_temperature numeric,
-  battery_voltage numeric,
-  alarms text,
-  notes text,
-  approval_status public.approval_status not null default 'submitted',
-  submitted_by uuid references public.users(id) on delete set null,
-  created_by uuid references public.users(id) on delete set null,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
-create table if not exists public.vibration_tests (
-  id uuid primary key default gen_random_uuid(),
-  generator_id uuid not null references public.generators(id) on delete cascade,
-  test_date date not null default current_date,
-  report_file_path text,
-  trend_analysis_notes text,
-  attachment_paths text[] not null default '{}',
-  approval_status public.approval_status not null default 'submitted',
-  submitted_by uuid references public.users(id) on delete set null,
-  created_by uuid references public.users(id) on delete set null,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
-);
-
 create table if not exists public.alarms (
   id uuid primary key default gen_random_uuid(),
   generator_id uuid references public.generators(id) on delete cascade,
@@ -393,8 +355,6 @@ as $$
     when 'ats_tests' then 'ATS test'
     when 'ats_manual_operations' then 'ATS manual operation'
     when 'maintenance_records' then 'maintenance record'
-    when 'load_tests' then 'load test'
-    when 'vibration_tests' then 'vibration test'
     when 'alarms' then 'alarm'
     when 'approvals' then 'approval'
     when 'reports' then 'report'
@@ -487,10 +447,17 @@ begin
     where u.id = actor_id;
   end if;
 
+  actor_email := coalesce(nullif(actor_email, ''), nullif(auth.jwt()->>'email', ''));
+  actor_name := coalesce(nullif(actor_name, ''), nullif(auth.jwt()->'user_metadata'->>'full_name', ''));
+
+  if lower(actor_email) = 'alim7@hotmail.com' then
+    actor_name := 'Ali Alisaihati';
+  end if;
+
   case TG_TABLE_NAME
     when 'generators' then
       related_generator_id := coalesce((new_data->>'id')::uuid, (old_data->>'id')::uuid);
-    when 'generator_photos', 'generator_files', 'weekly_inspections', 'dse_readings', 'ats_tests', 'ats_manual_operations', 'maintenance_records', 'load_tests', 'vibration_tests', 'alarms' then
+    when 'generator_photos', 'generator_files', 'weekly_inspections', 'dse_readings', 'ats_tests', 'ats_manual_operations', 'maintenance_records', 'alarms' then
       related_generator_id := coalesce((new_data->>'generator_id')::uuid, (old_data->>'generator_id')::uuid);
     else
       related_generator_id := null;
@@ -694,8 +661,8 @@ declare
 begin
   foreach table_name in array array[
     'users', 'sites', 'generators', 'weekly_inspections', 'dse_readings',
-    'ats_tests', 'ats_manual_operations', 'maintenance_records', 'load_tests',
-    'vibration_tests', 'alarms', 'approvals', 'reports'
+    'ats_tests', 'ats_manual_operations', 'maintenance_records',
+    'alarms', 'approvals', 'reports'
   ]
   loop
     execute format('drop trigger if exists set_%s_updated_at on public.%I', table_name, table_name);
@@ -715,7 +682,7 @@ begin
   foreach table_name in array array[
     'users', 'sites', 'generators', 'generator_photos', 'generator_files',
     'weekly_inspections', 'dse_readings', 'ats_tests', 'ats_manual_operations',
-    'maintenance_records', 'load_tests', 'vibration_tests', 'alarms',
+    'maintenance_records', 'alarms',
     'approvals', 'reports'
   ]
   loop
@@ -743,8 +710,6 @@ alter table public.dse_readings enable row level security;
 alter table public.ats_tests enable row level security;
 alter table public.ats_manual_operations enable row level security;
 alter table public.maintenance_records enable row level security;
-alter table public.load_tests enable row level security;
-alter table public.vibration_tests enable row level security;
 alter table public.alarms enable row level security;
 alter table public.event_logs enable row level security;
 alter table public.approvals enable row level security;
@@ -801,7 +766,7 @@ do $$
 declare
   table_name text;
 begin
-  foreach table_name in array array['weekly_inspections', 'dse_readings', 'ats_tests', 'ats_manual_operations', 'maintenance_records', 'load_tests', 'vibration_tests']
+  foreach table_name in array array['weekly_inspections', 'dse_readings', 'ats_tests', 'ats_manual_operations', 'maintenance_records']
   loop
     execute format('drop policy if exists "%s read" on public.%I', table_name, table_name);
     execute format('create policy "%s read" on public.%I for select to authenticated using (public.current_user_role() is not null)', table_name, table_name);

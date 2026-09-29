@@ -33,7 +33,7 @@ export const generatorParts: GeneratorPart[] = [
     name: "Cooling Fan",
     category: "Cooling System",
     purpose: "Forces air through the radiator to cool the coolant.",
-    technicianFocus: "Blade condition, clearance, vibration, guards, and airflow obstruction."
+    technicianFocus: "Blade condition, clearance, balance, guards, and airflow obstruction."
   },
   {
     number: 5,
@@ -159,7 +159,7 @@ export const generatorParts: GeneratorPart[] = [
     name: "Battery",
     category: "Starting & Control",
     purpose: "Starts the engine and supplies DC power.",
-    technicianFocus: "Voltage, electrolyte level, terminals, corrosion, load test result, and expiry date."
+    technicianFocus: "Voltage, electrolyte level, terminals, corrosion, battery performance, and expiry date."
   },
   {
     number: 23,

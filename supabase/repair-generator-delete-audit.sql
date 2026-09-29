@@ -49,10 +49,17 @@ begin
     where u.id = actor_id;
   end if;
 
+  actor_email := coalesce(nullif(actor_email, ''), nullif(auth.jwt()->>'email', ''));
+  actor_name := coalesce(nullif(actor_name, ''), nullif(auth.jwt()->'user_metadata'->>'full_name', ''));
+
+  if lower(actor_email) = 'alim7@hotmail.com' then
+    actor_name := 'Ali Alisaihati';
+  end if;
+
   case TG_TABLE_NAME
     when 'generators' then
       related_generator_id := coalesce((new_data->>'id')::uuid, (old_data->>'id')::uuid);
-    when 'generator_photos', 'generator_files', 'weekly_inspections', 'dse_readings', 'ats_tests', 'ats_manual_operations', 'maintenance_records', 'load_tests', 'vibration_tests', 'alarms' then
+    when 'generator_photos', 'generator_files', 'weekly_inspections', 'dse_readings', 'ats_tests', 'ats_manual_operations', 'maintenance_records', 'alarms' then
       related_generator_id := coalesce((new_data->>'generator_id')::uuid, (old_data->>'generator_id')::uuid);
     else
       related_generator_id := null;

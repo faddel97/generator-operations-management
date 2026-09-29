@@ -438,62 +438,6 @@ set generator_id = excluded.generator_id,
     approval_status = excluded.approval_status,
     updated_at = now();
 
-insert into public.load_tests (
-  id,
-  generator_id,
-  test_date,
-  load_level,
-  kw,
-  coolant_temperature,
-  approval_status,
-  notes
-)
-values
-  (
-    '70000000-0000-0000-0000-000000000001',
-    (select id from public.generators where generator_id = 'DEMO-GEN-001'),
-    current_date - interval '44 days',
-    80,
-    320,
-    84,
-    'approved',
-    'Promoted from demo phase.'
-  )
-on conflict (id) do update
-set generator_id = excluded.generator_id,
-    test_date = excluded.test_date,
-    load_level = excluded.load_level,
-    kw = excluded.kw,
-    coolant_temperature = excluded.coolant_temperature,
-    approval_status = excluded.approval_status,
-    notes = excluded.notes,
-    updated_at = now();
-
-insert into public.vibration_tests (
-  id,
-  generator_id,
-  test_date,
-  trend_analysis_notes,
-  attachment_paths,
-  approval_status
-)
-values
-  (
-    '80000000-0000-0000-0000-000000000001',
-    (select id from public.generators where generator_id = 'DEMO-GEN-002'),
-    current_date - interval '60 days',
-    'Promoted demo trend note.',
-    array[]::text[],
-    'submitted'
-  )
-on conflict (id) do update
-set generator_id = excluded.generator_id,
-    test_date = excluded.test_date,
-    trend_analysis_notes = excluded.trend_analysis_notes,
-    attachment_paths = excluded.attachment_paths,
-    approval_status = excluded.approval_status,
-    updated_at = now();
-
 insert into public.alarms (
   id,
   generator_id,

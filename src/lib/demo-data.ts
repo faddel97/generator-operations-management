@@ -99,26 +99,6 @@ export const demoModuleRows: Record<ModuleKey, GenericRow[]> = {
       approval_status: "approved"
     }
   ],
-  "load-tests": [
-    {
-      id: "demo-load-1",
-      test_date: new Date(Date.now() - 44 * 86400000).toISOString(),
-      generator_id: "DEMO-GEN-001",
-      load_level: 80,
-      kw: 320,
-      coolant_temperature: 84,
-      approval_status: "approved"
-    }
-  ],
-  "vibration-tests": [
-    {
-      id: "demo-vibration-1",
-      test_date: new Date(Date.now() - 60 * 86400000).toISOString(),
-      generator_id: "DEMO-GEN-002",
-      trend_analysis_notes: "Demo trend note only.",
-      approval_status: "submitted"
-    }
-  ],
   alarms: [
     {
       id: "demo-alarm-1",

@@ -38,6 +38,45 @@ export type DynamicSupabase = {
   from<T extends GenericRow = GenericRow>(table: string): DynamicTable<T>;
 };
 
+const actorDisplayNames: Record<string, string> = {
+  "alim7@hotmail.com": "Ali Alisaihati"
+};
+
+function applyActorDisplayName(moduleKey: ModuleKey, row: GenericRow | null, actorProfiles = new Map<string, GenericRow>()): GenericRow | null {
+  if (moduleKey !== "event-logs" || !row) {
+    return row;
+  }
+
+  const actorId = typeof row.actor_id === "string" ? row.actor_id : "";
+  const actorProfile = actorProfiles.get(actorId);
+  const actorEmailValue = row.actor_email ?? actorProfile?.email;
+  const actorEmail = typeof actorEmailValue === "string" ? actorEmailValue.trim().toLowerCase() : "";
+  const storedActorName = typeof row.actor_name === "string" && row.actor_name.trim() ? row.actor_name.trim() : null;
+  const profileActorName = typeof actorProfile?.full_name === "string" && actorProfile.full_name.trim() ? actorProfile.full_name.trim() : null;
+  const actorName = actorDisplayNames[actorEmail] ?? storedActorName ?? profileActorName;
+
+  if (!actorName) {
+    return row;
+  }
+
+  const message =
+    typeof row.message === "string" && /\s+by\s*$/i.test(row.message)
+      ? `${row.message.replace(/\s+by\s*$/i, "")} by ${actorName}`
+      : row.message;
+
+  return { ...row, actor_email: actorEmail || row.actor_email, actor_name: actorName, message };
+}
+
+async function getActorProfiles(supabase: DynamicSupabase) {
+  const { data, error } = await supabase.from("users").select("id, email, full_name").limit(500);
+
+  if (error || !data) {
+    return new Map<string, GenericRow>();
+  }
+
+  return new Map(data.filter((profile) => typeof profile.id === "string").map((profile) => [String(profile.id), profile]));
+}
+
 export type DashboardData = {
   isDemo: boolean;
   stats: {
@@ -417,7 +456,8 @@ export async function getModuleRows(moduleKey: ModuleKey): Promise<{ rows: Gener
     return { rows: [], isDemo: false, error: error.message };
   }
 
-  return { rows: data ?? [], isDemo: false };
+  const actorProfiles = moduleKey === "event-logs" ? await getActorProfiles(supabase) : new Map<string, GenericRow>();
+  return { rows: (data ?? []).map((row) => applyActorDisplayName(moduleKey, row, actorProfiles) ?? row), isDemo: false };
 }
 
 export async function getModuleRecord(moduleKey: ModuleKey, id: string) {
@@ -434,7 +474,8 @@ export async function getModuleRecord(moduleKey: ModuleKey, id: string) {
     return { row: null, isDemo: false, error: error.message };
   }
 
-  return { row: data, isDemo: false };
+  const actorProfiles = moduleKey === "event-logs" ? await getActorProfiles(supabase) : new Map<string, GenericRow>();
+  return { row: applyActorDisplayName(moduleKey, data, actorProfiles), isDemo: false };
 }
 
 export async function getDashboardData(): Promise<DashboardData> {

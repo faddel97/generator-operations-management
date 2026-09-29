@@ -5,11 +5,11 @@ begin;
 
 update auth.users
 set raw_user_meta_data = coalesce(raw_user_meta_data, '{}'::jsonb)
-  || jsonb_build_object('full_name', 'Ali Al-Saihati')
+  || jsonb_build_object('full_name', 'Ali Alisaihati')
 where lower(email) = lower('alim7@hotmail.com');
 
 insert into public.users (id, email, full_name)
-select id, email, 'Ali Al-Saihati'
+select id, email, 'Ali Alisaihati'
 from auth.users
 where lower(email) = lower('alim7@hotmail.com')
 on conflict (id) do update
@@ -18,7 +18,18 @@ set email = excluded.email,
     updated_at = now();
 
 update public.event_logs
-set actor_name = 'Ali Al-Saihati'
-where lower(actor_email) = lower('alim7@hotmail.com');
+set actor_email = 'alim7@hotmail.com',
+    actor_name = 'Ali Alisaihati',
+    message = case
+      when message ~* '\s+by\s*$'
+        then regexp_replace(message, '\s+by\s*$', '', 'i') || ' by Ali Alisaihati'
+      else message
+    end
+where lower(actor_email) = lower('alim7@hotmail.com')
+   or actor_id in (
+     select id
+     from auth.users
+     where lower(email) = lower('alim7@hotmail.com')
+   );
 
 commit;

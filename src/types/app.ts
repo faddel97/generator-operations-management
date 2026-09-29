@@ -13,8 +13,6 @@ export type ModuleKey =
   | "ats-tests"
   | "ats-manual-operations"
   | "maintenance-records"
-  | "load-tests"
-  | "vibration-tests"
   | "alarms"
   | "event-logs"
   | "reports";
