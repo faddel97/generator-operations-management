@@ -39,7 +39,7 @@ export type DynamicSupabase = {
 };
 
 const actorDisplayNames: Record<string, string> = {
-  "alim7@hotmail.com": "Ali Alisaihati"
+  "ali7m@hotmail.com": "Ali Alisaihati"
 };
 
 function applyActorDisplayName(moduleKey: ModuleKey, row: GenericRow | null, actorProfiles = new Map<string, GenericRow>()): GenericRow | null {

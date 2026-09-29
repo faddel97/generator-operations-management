@@ -450,7 +450,7 @@ begin
   actor_email := coalesce(nullif(actor_email, ''), nullif(auth.jwt()->>'email', ''));
   actor_name := coalesce(nullif(actor_name, ''), nullif(auth.jwt()->'user_metadata'->>'full_name', ''));
 
-  if lower(actor_email) = 'alim7@hotmail.com' then
+  if lower(actor_email) = 'ali7m@hotmail.com' then
     actor_name := 'Ali Alisaihati';
   end if;
 
