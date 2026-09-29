@@ -20,8 +20,8 @@ import {
 
 import { OperationsCharts } from "@/components/dashboard/operations-charts";
 import type { GeneratorAnalyticsItem } from "@/lib/data";
-import { demoTrendData } from "@/lib/demo-data";
 import { humanize } from "@/lib/format";
+import type { FleetTrendDatum } from "@/types/app";
 
 type AnalyticsMode = "fleet" | "generators";
 type ChartType = "donut" | "bar" | "line";
@@ -398,7 +398,7 @@ function GeneratorAnalytics({ generators }: { generators: GeneratorAnalyticsItem
   );
 }
 
-export function AnalyticsWorkspace({ trends, generators }: { trends: typeof demoTrendData; generators: GeneratorAnalyticsItem[] }) {
+export function AnalyticsWorkspace({ trends, generators }: { trends: FleetTrendDatum[]; generators: GeneratorAnalyticsItem[] }) {
   const [mode, setMode] = useState<AnalyticsMode>("generators");
 
   return (

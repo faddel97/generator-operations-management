@@ -3,7 +3,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { demoGeneratorOptions, demoTrendData } from "@/lib/demo-data";
 import { getDemoRecord, getDemoRows, getLocalDemoRows } from "@/lib/local-demo-store";
 import { getModuleDefinition } from "@/lib/module-definitions";
-import type { AttachmentMap, FieldDefinition, GeneratorOption, ModuleKey, UploadedAttachment } from "@/types/app";
+import type { AttachmentMap, FieldDefinition, FleetTrendDatum, GeneratorOption, ModuleKey, UploadedAttachment } from "@/types/app";
 import type { GenericRow } from "@/types/database";
 
 type QueryError = { message: string };
@@ -90,7 +90,7 @@ export type DashboardData = {
   };
   latestAlarms: GenericRow[];
   latestInspections: GenericRow[];
-  trends: typeof demoTrendData;
+  trends: FleetTrendDatum[];
   generators: GeneratorAnalyticsItem[];
 };
 
@@ -209,6 +209,49 @@ function preventiveMaintenanceStats(generators: GenericRow[], maintenanceRecords
       (record) => String(record.maintenance_type ?? "").toLowerCase() !== "corrective" && String(record.approval_status ?? "").toLowerCase() === "approved"
     ).length
   };
+}
+
+function averageReading(readings: GenericRow[], field: string) {
+  const values = readings
+    .map((reading) => numberOrNull(reading[field]))
+    .filter((value): value is number => value !== null);
+
+  return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
+}
+
+function buildFleetTrends(generators: GenericRow[], readings: GenericRow[]): FleetTrendDatum[] {
+  const readingsByGenerator = new Map<string, GenericRow[]>();
+
+  for (const reading of readings) {
+    const generatorId = typeof reading.generator_id === "string" ? reading.generator_id : "";
+    if (!generatorId) {
+      continue;
+    }
+
+    readingsByGenerator.set(generatorId, [...(readingsByGenerator.get(generatorId) ?? []), reading]);
+  }
+
+  return generators.flatMap((generator) => {
+    const generatorId = String(generator.id ?? "");
+    const generatorReadings = readingsByGenerator.get(generatorId) ?? readingsByGenerator.get(String(generator.generator_id ?? "")) ?? [];
+
+    if (!generatorReadings.length) {
+      return [];
+    }
+
+    const generatorName = `${generator.generator_id ?? "Generator"}${generator.model ? ` - ${generator.model}` : ""}`;
+
+    return [
+      {
+        generatorName,
+        readingCount: generatorReadings.length,
+        runningHours: averageReading(generatorReadings, "running_hours"),
+        batteryVoltage: averageReading(generatorReadings, "battery_voltage"),
+        coolantTemperature: averageReading(generatorReadings, "coolant_temperature"),
+        starts: averageReading(generatorReadings, "number_of_starts")
+      }
+    ];
+  });
 }
 
 export async function getDynamicSupabase() {
@@ -537,13 +580,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     },
     latestAlarms: alarms,
     latestInspections: inspections,
-    trends: readings.slice(-24).map((row, index) => ({
-      period: typeof row.reading_date === "string" ? row.reading_date.slice(5, 10) : `R${index + 1}`,
-      runningHours: Number(row.running_hours ?? 0),
-      batteryVoltage: Number(row.battery_voltage ?? 0),
-      coolantTemperature: Number(row.coolant_temperature ?? 0),
-      starts: Number(row.number_of_starts ?? 0)
-    })),
+    trends: buildFleetTrends(generators, readings),
     generators: buildGeneratorAnalytics(generators, readings)
   };
 }

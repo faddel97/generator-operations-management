@@ -1,4 +1,4 @@
-import type { GeneratorOption, ModuleKey } from "@/types/app";
+import type { FleetTrendDatum, GeneratorOption, ModuleKey } from "@/types/app";
 import type { GenericRow } from "@/types/database";
 
 export const demoGeneratorOptions: GeneratorOption[] = [
@@ -130,11 +130,21 @@ export const demoModuleRows: Record<ModuleKey, GenericRow[]> = {
   ]
 };
 
-export const demoTrendData = [
-  { period: "Week 1", runningHours: 1180, batteryVoltage: 26.1, coolantTemperature: 81, starts: 58 },
-  { period: "Week 2", runningHours: 1215, batteryVoltage: 26.3, coolantTemperature: 83, starts: 60 },
-  { period: "Week 3", runningHours: 1244, batteryVoltage: 26.0, coolantTemperature: 82, starts: 62 },
-  { period: "Week 4", runningHours: 1280, batteryVoltage: 26.4, coolantTemperature: 84, starts: 64 },
-  { period: "Week 5", runningHours: 1340, batteryVoltage: 25.7, coolantTemperature: 86, starts: 70 },
-  { period: "Week 6", runningHours: 1395, batteryVoltage: 25.5, coolantTemperature: 88, starts: 76 }
+export const demoTrendData: FleetTrendDatum[] = [
+  {
+    generatorName: "DEMO-GEN-001 - DG-500",
+    readingCount: 6,
+    runningHours: 1280,
+    batteryVoltage: 26.1,
+    coolantTemperature: 83,
+    starts: 61
+  },
+  {
+    generatorName: "DEMO-GEN-002 - DG-800",
+    readingCount: 5,
+    runningHours: 2120,
+    batteryVoltage: 24.9,
+    coolantTemperature: 88,
+    starts: 74
+  }
 ];

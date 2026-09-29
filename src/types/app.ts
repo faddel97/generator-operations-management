@@ -107,6 +107,15 @@ export type GeneratorOption = {
   label: string;
 };
 
+export type FleetTrendDatum = {
+  generatorName: string;
+  readingCount: number;
+  runningHours: number | null;
+  batteryVoltage: number | null;
+  coolantTemperature: number | null;
+  starts: number | null;
+};
+
 export type SessionContext = {
   isSupabaseConfigured: boolean;
   isDemoMode: boolean;
