@@ -1,6 +1,6 @@
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { demoGeneratorOptions, demoTrendData } from "@/lib/demo-data";
+import { demoGeneratorOptions } from "@/lib/demo-data";
 import { getDemoRecord, getDemoRows, getLocalDemoRows } from "@/lib/local-demo-store";
 import { getModuleDefinition } from "@/lib/module-definitions";
 import type { AttachmentMap, FieldDefinition, FleetTrendDatum, GeneratorOption, ModuleKey, UploadedAttachment } from "@/types/app";
@@ -91,6 +91,8 @@ export type DashboardData = {
   latestAlarms: GenericRow[];
   latestInspections: GenericRow[];
   trends: FleetTrendDatum[];
+  lowestTrends: FleetTrendDatum[];
+  highestTrends: FleetTrendDatum[];
   latestTrends: FleetTrendDatum[];
   generators: GeneratorAnalyticsItem[];
 };
@@ -212,15 +214,29 @@ function preventiveMaintenanceStats(generators: GenericRow[], maintenanceRecords
   };
 }
 
-function averageReading(readings: GenericRow[], field: string) {
+type TrendAggregation = "average" | "lowest" | "highest";
+
+function aggregateReading(readings: GenericRow[], field: string, aggregation: TrendAggregation) {
   const values = readings
     .map((reading) => numberOrNull(reading[field]))
     .filter((value): value is number => value !== null);
 
-  return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
+  if (!values.length) {
+    return null;
+  }
+
+  if (aggregation === "lowest") {
+    return Math.min(...values);
+  }
+
+  if (aggregation === "highest") {
+    return Math.max(...values);
+  }
+
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
-function buildFleetTrends(generators: GenericRow[], readings: GenericRow[]): FleetTrendDatum[] {
+function buildFleetTrends(generators: GenericRow[], readings: GenericRow[], aggregation: TrendAggregation = "average"): FleetTrendDatum[] {
   const readingsByGenerator = new Map<string, GenericRow[]>();
 
   for (const reading of readings) {
@@ -232,28 +248,24 @@ function buildFleetTrends(generators: GenericRow[], readings: GenericRow[]): Fle
     readingsByGenerator.set(generatorId, [...(readingsByGenerator.get(generatorId) ?? []), reading]);
   }
 
-  return generators.flatMap((generator) => {
+  return generators.map((generator) => {
     const generatorId = String(generator.id ?? "");
     const generatorReadings = readingsByGenerator.get(generatorId) ?? readingsByGenerator.get(String(generator.generator_id ?? "")) ?? [];
 
-    if (!generatorReadings.length) {
-      return [];
-    }
-
     const generatorName = `${generator.generator_id ?? "Generator"}${generator.model ? ` - ${generator.model}` : ""}`;
 
-    return [
-      {
-        generatorId,
-        generatorName,
-        readingCount: generatorReadings.length,
-        runningHours: averageReading(generatorReadings, "running_hours"),
-        batteryVoltage: averageReading(generatorReadings, "battery_voltage"),
-        coolantTemperature: averageReading(generatorReadings, "coolant_temperature"),
-        starts: averageReading(generatorReadings, "number_of_starts"),
-        fuelLevelPercentage: averageReading(generatorReadings, "fuel_level_percentage")
-      }
-    ];
+    return {
+      generatorId,
+      generatorName,
+      readingCount: generatorReadings.length,
+      runningHours: aggregateReading(generatorReadings, "running_hours", aggregation),
+      batteryVoltage: aggregateReading(generatorReadings, "battery_voltage", aggregation),
+      coolantTemperature: aggregateReading(generatorReadings, "coolant_temperature", aggregation),
+      starts: aggregateReading(generatorReadings, "number_of_starts", aggregation),
+      engineSpeedRpm: aggregateReading(generatorReadings, "engine_speed_rpm", aggregation),
+      fuelLevelLiters: aggregateReading(generatorReadings, "fuel_level_liters", aggregation),
+      fuelLevelPercentage: aggregateReading(generatorReadings, "fuel_level_percentage", aggregation)
+    };
   });
 }
 
@@ -267,24 +279,22 @@ function buildLatestFleetTrends(generators: GenericRow[], readings: GenericRow[]
     }
   }
 
-  return generators.flatMap((generator) => {
+  return generators.map((generator) => {
     const generatorId = String(generator.id ?? "");
     const reading = latestReadingByGenerator.get(generatorId) ?? latestReadingByGenerator.get(String(generator.generator_id ?? ""));
 
-    if (!reading) {
-      return [];
-    }
-
-    return [{
+    return {
       generatorId,
       generatorName: `${generator.generator_id ?? "Generator"}${generator.model ? ` - ${generator.model}` : ""}`,
-      readingCount: 1,
-      runningHours: numberOrNull(reading.running_hours),
-      batteryVoltage: numberOrNull(reading.battery_voltage),
-      coolantTemperature: numberOrNull(reading.coolant_temperature),
-      starts: numberOrNull(reading.number_of_starts),
-      fuelLevelPercentage: numberOrNull(reading.fuel_level_percentage)
-    }];
+      readingCount: reading ? 1 : 0,
+      runningHours: numberOrNull(reading?.running_hours),
+      batteryVoltage: numberOrNull(reading?.battery_voltage),
+      coolantTemperature: numberOrNull(reading?.coolant_temperature),
+      starts: numberOrNull(reading?.number_of_starts),
+      engineSpeedRpm: numberOrNull(reading?.engine_speed_rpm),
+      fuelLevelLiters: numberOrNull(reading?.fuel_level_liters),
+      fuelLevelPercentage: numberOrNull(reading?.fuel_level_percentage)
+    };
   });
 }
 
@@ -579,7 +589,9 @@ export async function getDashboardData(): Promise<DashboardData> {
       },
       latestAlarms: alarms,
       latestInspections: inspections,
-      trends: demoTrendData,
+      trends: buildFleetTrends(generators, readings),
+      lowestTrends: buildFleetTrends(generators, readings, "lowest"),
+      highestTrends: buildFleetTrends(generators, readings, "highest"),
       latestTrends: buildLatestFleetTrends(generators, readings),
       generators: buildGeneratorAnalytics(generators, readings)
     };
@@ -618,6 +630,8 @@ export async function getDashboardData(): Promise<DashboardData> {
     latestAlarms: alarms,
     latestInspections: inspections,
     trends: buildFleetTrends(generators, readings),
+    lowestTrends: buildFleetTrends(generators, readings, "lowest"),
+    highestTrends: buildFleetTrends(generators, readings, "highest"),
     latestTrends: buildLatestFleetTrends(generators, readings),
     generators: buildGeneratorAnalytics(generators, readings)
   };

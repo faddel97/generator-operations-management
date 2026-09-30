@@ -51,8 +51,10 @@ export const demoModuleRows: Record<ModuleKey, GenericRow[]> = {
       reading_date: new Date(Date.now() - 2 * 86400000).toISOString(),
       generator_id: "DEMO-GEN-001",
       running_hours: 1280,
+      number_of_starts: 61,
       battery_voltage: 26.4,
       coolant_temperature: 82,
+      engine_speed_rpm: 1500,
       fuel_level_liters: 560,
       fuel_level_percentage: 70,
       approval_status: "approved"
@@ -62,8 +64,10 @@ export const demoModuleRows: Record<ModuleKey, GenericRow[]> = {
       reading_date: new Date(Date.now() - 1 * 86400000).toISOString(),
       generator_id: "DEMO-GEN-002",
       running_hours: 2120,
+      number_of_starts: 74,
       battery_voltage: 24.9,
       coolant_temperature: 88,
+      engine_speed_rpm: 1498,
       fuel_level_liters: 540,
       fuel_level_percentage: 45,
       approval_status: "submitted"
@@ -145,6 +149,8 @@ export const demoTrendData: FleetTrendDatum[] = [
     batteryVoltage: 26.1,
     coolantTemperature: 83,
     starts: 61,
+    engineSpeedRpm: 1500,
+    fuelLevelLiters: 560,
     fuelLevelPercentage: 70
   },
   {
@@ -155,6 +161,8 @@ export const demoTrendData: FleetTrendDatum[] = [
     batteryVoltage: 24.9,
     coolantTemperature: 88,
     starts: 74,
+    engineSpeedRpm: 1500,
+    fuelLevelLiters: 540,
     fuelLevelPercentage: 45
   }
 ];

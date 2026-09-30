@@ -119,6 +119,8 @@ export type FleetTrendDatum = {
   batteryVoltage: number | null;
   coolantTemperature: number | null;
   starts: number | null;
+  engineSpeedRpm: number | null;
+  fuelLevelLiters: number | null;
   fuelLevelPercentage: number | null;
 };
 

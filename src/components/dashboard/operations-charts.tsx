@@ -13,7 +13,38 @@ import {
 
 import type { FleetTrendDatum } from "@/types/app";
 
-export type DashboardTrendMetric = "runningHours" | "batteryVoltage" | "coolantTemperature" | "starts" | "fuelLevelPercentage";
+export type DashboardTrendMetric =
+  | "runningHours"
+  | "batteryVoltage"
+  | "coolantTemperature"
+  | "starts"
+  | "engineSpeedRpm"
+  | "fuelLevelLiters"
+  | "fuelLevelPercentage";
+
+export type DashboardTrendMode = "average" | "lowest" | "highest" | "latest";
+
+export const dashboardTrendDefinitions: Array<{
+  metric: DashboardTrendMetric;
+  label: string;
+  color: string;
+  unit?: string;
+}> = [
+  { metric: "runningHours", label: "Running Hours", color: "#0f766e", unit: "h" },
+  { metric: "starts", label: "Number of Starts", color: "#b91c1c" },
+  { metric: "batteryVoltage", label: "Battery Voltage", color: "#2563eb", unit: "V" },
+  { metric: "coolantTemperature", label: "Coolant Temperature", color: "#ca8a04", unit: "C" },
+  { metric: "engineSpeedRpm", label: "Engine Speed", color: "#7c3aed", unit: "RPM" },
+  { metric: "fuelLevelLiters", label: "Fuel in Tank", color: "#0891b2", unit: "L" },
+  { metric: "fuelLevelPercentage", label: "Fuel Level", color: "#16a34a", unit: "%" }
+];
+
+const modeLabels: Record<DashboardTrendMode, string> = {
+  average: "Average",
+  lowest: "Lowest",
+  highest: "Highest",
+  latest: "Latest Entry"
+};
 
 function formatValue(value: number, unit?: string) {
   return `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(value)}${unit ? ` ${unit}` : ""}`;
@@ -32,7 +63,7 @@ function TrendChart({
   dataKey: DashboardTrendMetric;
   color: string;
   unit?: string;
-  mode: "average" | "latest";
+  mode: DashboardTrendMode;
 }) {
   const chartData = data.flatMap((row) => {
     const value = row[dataKey];
@@ -55,11 +86,11 @@ function TrendChart({
     <div className="rounded-md border border-slate-200 bg-white p-5">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase text-teal-700">{mode === "average" ? "Per-generator average" : "Latest entry per generator"}</p>
+          <p className="text-xs font-semibold uppercase text-teal-700">{modeLabels[mode]} per generator</p>
           <h3 className="mt-1 text-base font-semibold text-slate-950">{title}</h3>
         </div>
         <p className="text-sm font-medium text-slate-700">
-          {mode === "average" ? "Selected average" : "Selected generators"}: <span className="font-bold text-slate-950">{fleetAverage === null ? "Not recorded" : formatValue(fleetAverage, unit)}</span>
+          Selected generators: <span className="font-bold text-slate-950">{fleetAverage === null ? "Not recorded" : formatValue(fleetAverage, unit)}</span>
         </p>
       </div>
 
@@ -83,9 +114,9 @@ function TrendChart({
                   labelFormatter={(label) => `Generator: ${label}`}
                   formatter={(value, _name, item) => [
                     String(item.payload.valueLabel ?? value),
-                    mode === "average"
-                      ? `Average across ${item.payload.readingCount} reading${item.payload.readingCount === 1 ? "" : "s"}`
-                      : "Latest recorded entry"
+                    mode === "latest"
+                      ? "Latest recorded entry"
+                      : `${modeLabels[mode]} across ${item.payload.readingCount} reading${item.payload.readingCount === 1 ? "" : "s"}`
                   ]}
                 />
                 <Bar dataKey="value" name={title} fill={color} radius={[4, 4, 0, 0]} maxBarSize={58}>
@@ -105,26 +136,18 @@ function TrendChart({
 export function OperationsCharts({
   data,
   mode = "average",
-  visibleMetrics = ["runningHours", "batteryVoltage", "coolantTemperature", "starts", "fuelLevelPercentage"]
+  visibleMetrics = dashboardTrendDefinitions.map((chart) => chart.metric)
 }: {
   data: FleetTrendDatum[];
-  mode?: "average" | "latest";
+  mode?: DashboardTrendMode;
   visibleMetrics?: DashboardTrendMetric[];
 }) {
-  const chartDefinitions: Array<{ metric: DashboardTrendMetric; averageTitle: string; latestTitle: string; color: string; unit?: string }> = [
-    { metric: "runningHours", averageTitle: "Average Running Hours", latestTitle: "Running Hours", color: "#0f766e", unit: "h" },
-    { metric: "batteryVoltage", averageTitle: "Average Battery Voltage", latestTitle: "Battery Voltage", color: "#2563eb", unit: "V" },
-    { metric: "coolantTemperature", averageTitle: "Average Coolant Temperature", latestTitle: "Coolant Temperature", color: "#ca8a04", unit: "C" },
-    { metric: "starts", averageTitle: "Average Number of Starts", latestTitle: "Number of Starts", color: "#b91c1c" },
-    { metric: "fuelLevelPercentage", averageTitle: "Average Fuel Level", latestTitle: "Fuel Level", color: "#16a34a", unit: "%" }
-  ];
-
   return (
     <div className="grid gap-5 xl:grid-cols-2">
-      {chartDefinitions.filter((chart) => visibleMetrics.includes(chart.metric)).map((chart) => (
+      {dashboardTrendDefinitions.filter((chart) => visibleMetrics.includes(chart.metric)).map((chart) => (
         <TrendChart
           key={chart.metric}
-          title={mode === "average" ? chart.averageTitle : chart.latestTitle}
+          title={`${modeLabels[mode]} ${chart.label}`}
           data={data}
           dataKey={chart.metric}
           color={chart.color}

@@ -75,7 +75,12 @@ export default async function DashboardPage() {
           <p className="text-xs font-semibold uppercase text-teal-700">DSE Monitoring</p>
           <h3 className="mt-1 text-xl font-semibold text-slate-950">Operating Trends</h3>
         </div>
-        <DashboardTrendFilters averageData={dashboard.trends} latestData={dashboard.latestTrends} />
+        <DashboardTrendFilters
+          averageData={dashboard.trends}
+          lowestData={dashboard.lowestTrends}
+          highestData={dashboard.highestTrends}
+          latestData={dashboard.latestTrends}
+        />
       </section>
 
       <div className="grid gap-5 xl:grid-cols-2">
