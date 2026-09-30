@@ -106,10 +106,18 @@ function parseScalarField(formData: FormData, field: FieldDefinition) {
   return raw;
 }
 
-function parseChecklist(formData: FormData, field: FieldDefinition) {
+function parseChecklist(formData: FormData, field: FieldDefinition, maintenanceType: string) {
   const result: Record<string, ChecklistPayloadItem> = {};
 
   for (const item of field.checklistItems ?? []) {
+    if (item.maintenanceTypes && !item.maintenanceTypes.includes(maintenanceType)) {
+      continue;
+    }
+
+    if (maintenanceType === "corrective" && formData.get(`${field.name}.${item.key}.selected`) !== "on") {
+      continue;
+    }
+
     result[item.key] = {
       status: formString(formData, `${field.name}.${item.key}.status`) || item.defaultValue || "N/A",
       notes: formString(formData, `${field.name}.${item.key}.notes`)
@@ -147,6 +155,10 @@ function preserveChecklistPhotoPaths({
   const previousItems = previousChecklist as Record<string, Record<string, unknown>>;
 
   for (const item of field.checklistItems ?? []) {
+    if (!nextChecklist[item.key]) {
+      continue;
+    }
+
     const previousPhotoPath = previousItems[item.key]?.photo_path;
     if (typeof previousPhotoPath === "string" && previousPhotoPath.trim() !== "") {
       nextChecklist[item.key] = {
@@ -376,15 +388,20 @@ export async function saveModuleRecordAction(formData: FormData) {
   }
 
   const payload: Record<string, unknown> = {};
+  const maintenanceType = formString(formData, "maintenance_type");
 
   for (const field of definition.fields) {
+    if (field.persist === false) {
+      continue;
+    }
+
     if (field.type === "file") {
       continue;
     }
 
     if (field.type === "checklist") {
       payload[field.name] = preserveChecklistPhotoPaths({
-        nextChecklist: parseChecklist(formData, field),
+        nextChecklist: parseChecklist(formData, field, maintenanceType),
         previousChecklist: existingRecord?.[field.name],
         field
       });
@@ -397,6 +414,28 @@ export async function saveModuleRecordAction(formData: FormData) {
     }
 
     payload[field.name] = parseScalarField(formData, field);
+  }
+
+  if (moduleKey === "dse-readings") {
+    const generatorId = typeof payload.generator_id === "string" ? payload.generator_id : "";
+    const currentFuel = typeof payload.fuel_level_liters === "number" ? payload.fuel_level_liters : null;
+
+    if (generatorId && currentFuel !== null) {
+      let tankCapacity: number | null = null;
+
+      if (supabase) {
+        const generatorResult = await supabase.from("generators").select("fuel_tank_capacity").eq("id", generatorId).maybeSingle();
+        if (generatorResult.error) {
+          throw new Error(generatorResult.error.message);
+        }
+        const parsedCapacity = Number(generatorResult.data?.fuel_tank_capacity);
+        tankCapacity = Number.isFinite(parsedCapacity) && parsedCapacity > 0 ? parsedCapacity : null;
+      }
+
+      payload.fuel_level_percentage = tankCapacity === null ? null : Math.min(100, Math.max(0, (currentFuel / tankCapacity) * 100));
+    } else {
+      payload.fuel_level_percentage = null;
+    }
   }
 
   if (context.userId) {

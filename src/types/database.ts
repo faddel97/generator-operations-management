@@ -149,6 +149,8 @@ export type Database = {
           battery_voltage: number | null;
           coolant_temperature: number | null;
           engine_speed_rpm: number | null;
+          fuel_level_liters: number | null;
+          fuel_level_percentage: number | null;
           alarm_screen: string | null;
           event_log: string | null;
           backup_file_path: string | null;

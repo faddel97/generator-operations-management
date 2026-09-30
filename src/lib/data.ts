@@ -91,6 +91,7 @@ export type DashboardData = {
   latestAlarms: GenericRow[];
   latestInspections: GenericRow[];
   trends: FleetTrendDatum[];
+  latestTrends: FleetTrendDatum[];
   generators: GeneratorAnalyticsItem[];
 };
 
@@ -243,14 +244,47 @@ function buildFleetTrends(generators: GenericRow[], readings: GenericRow[]): Fle
 
     return [
       {
+        generatorId,
         generatorName,
         readingCount: generatorReadings.length,
         runningHours: averageReading(generatorReadings, "running_hours"),
         batteryVoltage: averageReading(generatorReadings, "battery_voltage"),
         coolantTemperature: averageReading(generatorReadings, "coolant_temperature"),
-        starts: averageReading(generatorReadings, "number_of_starts")
+        starts: averageReading(generatorReadings, "number_of_starts"),
+        fuelLevelPercentage: averageReading(generatorReadings, "fuel_level_percentage")
       }
     ];
+  });
+}
+
+function buildLatestFleetTrends(generators: GenericRow[], readings: GenericRow[]): FleetTrendDatum[] {
+  const latestReadingByGenerator = new Map<string, GenericRow>();
+
+  for (const reading of readings) {
+    const generatorId = typeof reading.generator_id === "string" ? reading.generator_id : "";
+    if (generatorId) {
+      latestReadingByGenerator.set(generatorId, reading);
+    }
+  }
+
+  return generators.flatMap((generator) => {
+    const generatorId = String(generator.id ?? "");
+    const reading = latestReadingByGenerator.get(generatorId) ?? latestReadingByGenerator.get(String(generator.generator_id ?? ""));
+
+    if (!reading) {
+      return [];
+    }
+
+    return [{
+      generatorId,
+      generatorName: `${generator.generator_id ?? "Generator"}${generator.model ? ` - ${generator.model}` : ""}`,
+      readingCount: 1,
+      runningHours: numberOrNull(reading.running_hours),
+      batteryVoltage: numberOrNull(reading.battery_voltage),
+      coolantTemperature: numberOrNull(reading.coolant_temperature),
+      starts: numberOrNull(reading.number_of_starts),
+      fuelLevelPercentage: numberOrNull(reading.fuel_level_percentage)
+    }];
   });
 }
 
@@ -452,7 +486,8 @@ export async function getGeneratorOptions(): Promise<GeneratorOption[]> {
     const localGenerators = await getLocalDemoRows("generators");
     const localOptions = localGenerators.map((row) => ({
       id: String(row.id),
-      label: `${row.generator_id ?? "Generator"} - ${row.manufacturer ?? "Unknown"} ${row.model ?? ""}`.trim()
+      label: `${row.generator_id ?? "Generator"} - ${row.manufacturer ?? "Unknown"} ${row.model ?? ""}`.trim(),
+      fuelTankCapacity: numberOrNull(row.fuel_tank_capacity)
     }));
 
     return [...localOptions, ...demoGeneratorOptions];
@@ -461,7 +496,7 @@ export async function getGeneratorOptions(): Promise<GeneratorOption[]> {
   const supabase = await getDynamicSupabase();
   const { data, error } = await supabase
     .from("generators")
-    .select("id, generator_id, manufacturer, model")
+    .select("id, generator_id, manufacturer, model, fuel_tank_capacity")
     .order("generator_id", { ascending: true })
     .limit(500);
 
@@ -471,7 +506,8 @@ export async function getGeneratorOptions(): Promise<GeneratorOption[]> {
 
   return data.map((row) => ({
     id: String(row.id),
-    label: `${row.generator_id ?? "Generator"} - ${row.manufacturer ?? "Unknown"} ${row.model ?? ""}`.trim()
+    label: `${row.generator_id ?? "Generator"} - ${row.manufacturer ?? "Unknown"} ${row.model ?? ""}`.trim(),
+    fuelTankCapacity: numberOrNull(row.fuel_tank_capacity)
   }));
 }
 
@@ -544,6 +580,7 @@ export async function getDashboardData(): Promise<DashboardData> {
       latestAlarms: alarms,
       latestInspections: inspections,
       trends: demoTrendData,
+      latestTrends: buildLatestFleetTrends(generators, readings),
       generators: buildGeneratorAnalytics(generators, readings)
     };
   }
@@ -581,6 +618,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     latestAlarms: alarms,
     latestInspections: inspections,
     trends: buildFleetTrends(generators, readings),
+    latestTrends: buildLatestFleetTrends(generators, readings),
     generators: buildGeneratorAnalytics(generators, readings)
   };
 }

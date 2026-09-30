@@ -127,6 +127,8 @@ create table if not exists public.dse_readings (
   battery_voltage numeric,
   coolant_temperature numeric,
   engine_speed_rpm integer,
+  fuel_level_liters numeric check (fuel_level_liters >= 0),
+  fuel_level_percentage numeric check (fuel_level_percentage between 0 and 100),
   alarm_screen text,
   event_log text,
   backup_file_path text,
@@ -136,6 +138,31 @@ create table if not exists public.dse_readings (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.dse_readings
+  add column if not exists fuel_level_liters numeric,
+  add column if not exists fuel_level_percentage numeric;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'dse_readings_fuel_level_liters_check'
+      and conrelid = 'public.dse_readings'::regclass
+  ) then
+    alter table public.dse_readings
+      add constraint dse_readings_fuel_level_liters_check check (fuel_level_liters >= 0);
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'dse_readings_fuel_level_percentage_check'
+      and conrelid = 'public.dse_readings'::regclass
+  ) then
+    alter table public.dse_readings
+      add constraint dse_readings_fuel_level_percentage_check check (fuel_level_percentage between 0 and 100);
+  end if;
+end $$;
 
 create table if not exists public.ats_tests (
   id uuid primary key default gen_random_uuid(),

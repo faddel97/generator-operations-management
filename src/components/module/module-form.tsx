@@ -76,15 +76,51 @@ function FieldControl({
   field,
   record,
   generatorOptions,
-  attachments
+  attachments,
+  selectedMaintenanceType,
+  selectedGeneratorId,
+  fuelLevelLiters,
+  onMaintenanceTypeChange,
+  onGeneratorChange,
+  onFuelLevelChange
 }: {
   field: FieldDefinition;
   record?: GenericRow | null;
   generatorOptions: GeneratorOption[];
   attachments: AttachmentMap;
+  selectedMaintenanceType: string;
+  selectedGeneratorId: string;
+  fuelLevelLiters: string;
+  onMaintenanceTypeChange: (value: string) => void;
+  onGeneratorChange: (value: string) => void;
+  onFuelLevelChange: (value: string) => void;
 }) {
   const commonClass = "form-input";
   const defaultValue = fieldValue(record, field);
+  const selectedGenerator = generatorOptions.find((option) => option.id === selectedGeneratorId);
+  const fuelTankCapacity = selectedGenerator?.fuelTankCapacity ?? null;
+  const parsedFuelLevel = Number(fuelLevelLiters);
+  const calculatedFuelPercentage =
+    typeof fuelTankCapacity === "number" && fuelTankCapacity > 0 && Number.isFinite(parsedFuelLevel)
+      ? Math.min(100, Math.max(0, (parsedFuelLevel / fuelTankCapacity) * 100))
+      : null;
+
+  if (field.name === "fuel_tank_capacity_display") {
+    return <input type="number" value={fuelTankCapacity ?? ""} readOnly className={`${commonClass} bg-slate-50 text-slate-600`} placeholder="Select a generator with a recorded tank capacity" />;
+  }
+
+  if (field.name === "fuel_level_percentage") {
+    return (
+      <div className="space-y-2">
+        <input name={field.name} type="number" value={calculatedFuelPercentage === null ? "" : calculatedFuelPercentage.toFixed(2)} readOnly className={`${commonClass} bg-slate-50 font-semibold text-teal-800`} />
+        {calculatedFuelPercentage !== null ? (
+          <div className="h-2 overflow-hidden rounded-full bg-slate-200" aria-label={`Fuel level ${calculatedFuelPercentage.toFixed(1)} percent`}>
+            <div className="h-full rounded-full bg-teal-600" style={{ width: `${calculatedFuelPercentage}%` }} />
+          </div>
+        ) : null}
+      </div>
+    );
+  }
 
   if (field.type === "textarea") {
     return <textarea name={field.name} rows={4} required={field.required} defaultValue={defaultValue} className={commonClass} placeholder={field.placeholder} />;
@@ -92,7 +128,13 @@ function FieldControl({
 
   if (field.type === "select") {
     return (
-      <select name={field.name} required={field.required} defaultValue={defaultValue} className={commonClass}>
+      <select
+        name={field.name}
+        required={field.required}
+        defaultValue={defaultValue}
+        className={commonClass}
+        onChange={field.name === "maintenance_type" ? (event) => onMaintenanceTypeChange(event.target.value) : undefined}
+      >
         <option value="">Select...</option>
         {(field.options ?? []).map((option) => (
           <option key={option.value} value={option.value}>
@@ -105,7 +147,7 @@ function FieldControl({
 
   if (field.type === "generator") {
     return (
-      <select name={field.name} required={field.required} defaultValue={defaultValue} className={commonClass}>
+      <select name={field.name} required={field.required} defaultValue={defaultValue} className={commonClass} onChange={(event) => onGeneratorChange(event.target.value)}>
         <option value="">Select generator...</option>
         {generatorOptions.map((option) => (
           <option key={option.id} value={option.id}>
@@ -146,19 +188,34 @@ function FieldControl({
 
   if (field.type === "checklist") {
     const sections = new Map<string, NonNullable<FieldDefinition["checklistItems"]>>();
-    (field.checklistItems ?? []).forEach((item) => {
-      const section = item.section ?? "Checklist";
+    const applicableItems = (field.checklistItems ?? []).filter(
+      (item) => !item.maintenanceTypes || item.maintenanceTypes.includes(selectedMaintenanceType)
+    );
+    applicableItems.forEach((item) => {
+      const section = item.maintenanceTypes && selectedMaintenanceType
+        ? `${humanize(selectedMaintenanceType)} Characteristics`
+        : item.section ?? "Checklist";
       sections.set(section, [...(sections.get(section) ?? []), item]);
     });
 
     return (
       <div className="space-y-4">
+        {selectedMaintenanceType ? null : <p className="rounded-md bg-amber-50 px-4 py-3 text-sm text-amber-900">Choose a maintenance type to display its characteristics.</p>}
         {Array.from(sections.entries()).map(([section, items]) => (
           <div key={section} className="rounded-md border border-slate-200">
             <div className="border-b border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-800">{section}</div>
             <div className="divide-y divide-slate-100">
               {items.map((item) => (
-                <div key={item.key} className="grid gap-3 px-4 py-3 md:grid-cols-[180px_140px_1fr_180px] md:items-center">
+                <div key={item.key} className={`grid gap-3 px-4 py-3 md:items-center ${selectedMaintenanceType === "corrective" ? "md:grid-cols-[36px_180px_140px_1fr_180px]" : "md:grid-cols-[180px_140px_1fr_180px]"}`}>
+                  {selectedMaintenanceType === "corrective" ? (
+                    <input
+                      name={`${field.name}.${item.key}.selected`}
+                      type="checkbox"
+                      defaultChecked={Boolean(getChecklistValue(record, field.name, item.key, "status"))}
+                      className="h-4 w-4 accent-teal-700"
+                      aria-label={`Include ${item.label} in corrective report`}
+                    />
+                  ) : null}
                   <div className="text-sm font-medium text-slate-800">{item.label}</div>
                   {item.control === "text" ? (
                     <input
@@ -216,6 +273,8 @@ function FieldControl({
       step={field.step}
       className={commonClass}
       placeholder={field.placeholder}
+      readOnly={field.readOnly}
+      onChange={field.name === "fuel_level_liters" ? (event) => onFuelLevelChange(event.target.value) : undefined}
     />
   );
 }
@@ -237,6 +296,9 @@ export function ModuleForm({
   const submitAfterUploadRef = useRef(false);
   const [uploadStatus, setUploadStatus] = useState<"idle" | "uploading" | "error">("idle");
   const [uploadMessage, setUploadMessage] = useState("");
+  const [selectedMaintenanceType, setSelectedMaintenanceType] = useState(() => String(record?.maintenance_type ?? ""));
+  const [selectedGeneratorId, setSelectedGeneratorId] = useState(() => String(record?.generator_id ?? ""));
+  const [fuelLevelLiters, setFuelLevelLiters] = useState(() => String(record?.fuel_level_liters ?? ""));
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     if (submitAfterUploadRef.current) {
@@ -325,7 +387,18 @@ export function ModuleForm({
                     {field.label}
                     {field.required ? <span className="text-red-600"> *</span> : null}
                   </label>
-                  <FieldControl field={field} record={record} generatorOptions={generatorOptions} attachments={attachments} />
+                  <FieldControl
+                    field={field}
+                    record={record}
+                    generatorOptions={generatorOptions}
+                    attachments={attachments}
+                    selectedMaintenanceType={selectedMaintenanceType}
+                    selectedGeneratorId={selectedGeneratorId}
+                    fuelLevelLiters={fuelLevelLiters}
+                    onMaintenanceTypeChange={setSelectedMaintenanceType}
+                    onGeneratorChange={setSelectedGeneratorId}
+                    onFuelLevelChange={setFuelLevelLiters}
+                  />
                   {field.helper ? <p className="mt-1.5 text-xs text-slate-500">{field.helper}</p> : null}
                 </div>
               );

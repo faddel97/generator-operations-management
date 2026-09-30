@@ -41,6 +41,7 @@ export type ChecklistItem = {
   control?: "select" | "text";
   options?: SelectOption[];
   defaultValue?: string;
+  maintenanceTypes?: string[];
 };
 
 export type FieldDefinition = {
@@ -62,6 +63,8 @@ export type FieldDefinition = {
   storageTable?: "generator_photos" | "generator_files";
   storageType?: string;
   targetColumn?: string;
+  readOnly?: boolean;
+  persist?: boolean;
 };
 
 export type UploadedAttachment = {
@@ -105,15 +108,18 @@ export type ModuleDefinition = {
 export type GeneratorOption = {
   id: string;
   label: string;
+  fuelTankCapacity?: number | null;
 };
 
 export type FleetTrendDatum = {
+  generatorId: string;
   generatorName: string;
   readingCount: number;
   runningHours: number | null;
   batteryVoltage: number | null;
   coolantTemperature: number | null;
   starts: number | null;
+  fuelLevelPercentage: number | null;
 };
 
 export type SessionContext = {

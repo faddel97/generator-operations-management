@@ -13,7 +13,7 @@ import {
 
 import type { FleetTrendDatum } from "@/types/app";
 
-type TrendMetric = "runningHours" | "batteryVoltage" | "coolantTemperature" | "starts";
+export type DashboardTrendMetric = "runningHours" | "batteryVoltage" | "coolantTemperature" | "starts" | "fuelLevelPercentage";
 
 function formatValue(value: number, unit?: string) {
   return `${new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(value)}${unit ? ` ${unit}` : ""}`;
@@ -24,13 +24,15 @@ function TrendChart({
   data,
   dataKey,
   color,
-  unit
+  unit,
+  mode
 }: {
   title: string;
   data: FleetTrendDatum[];
-  dataKey: TrendMetric;
+  dataKey: DashboardTrendMetric;
   color: string;
   unit?: string;
+  mode: "average" | "latest";
 }) {
   const chartData = data.flatMap((row) => {
     const value = row[dataKey];
@@ -53,11 +55,11 @@ function TrendChart({
     <div className="rounded-md border border-slate-200 bg-white p-5">
       <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase text-teal-700">Per-generator average</p>
+          <p className="text-xs font-semibold uppercase text-teal-700">{mode === "average" ? "Per-generator average" : "Latest entry per generator"}</p>
           <h3 className="mt-1 text-base font-semibold text-slate-950">{title}</h3>
         </div>
         <p className="text-sm font-medium text-slate-700">
-          Fleet average: <span className="font-bold text-slate-950">{fleetAverage === null ? "Not recorded" : formatValue(fleetAverage, unit)}</span>
+          {mode === "average" ? "Selected average" : "Selected generators"}: <span className="font-bold text-slate-950">{fleetAverage === null ? "Not recorded" : formatValue(fleetAverage, unit)}</span>
         </p>
       </div>
 
@@ -81,7 +83,9 @@ function TrendChart({
                   labelFormatter={(label) => `Generator: ${label}`}
                   formatter={(value, _name, item) => [
                     String(item.payload.valueLabel ?? value),
-                    `Average across ${item.payload.readingCount} reading${item.payload.readingCount === 1 ? "" : "s"}`
+                    mode === "average"
+                      ? `Average across ${item.payload.readingCount} reading${item.payload.readingCount === 1 ? "" : "s"}`
+                      : "Latest recorded entry"
                   ]}
                 />
                 <Bar dataKey="value" name={title} fill={color} radius={[4, 4, 0, 0]} maxBarSize={58}>
@@ -98,13 +102,36 @@ function TrendChart({
   );
 }
 
-export function OperationsCharts({ data }: { data: FleetTrendDatum[] }) {
+export function OperationsCharts({
+  data,
+  mode = "average",
+  visibleMetrics = ["runningHours", "batteryVoltage", "coolantTemperature", "starts", "fuelLevelPercentage"]
+}: {
+  data: FleetTrendDatum[];
+  mode?: "average" | "latest";
+  visibleMetrics?: DashboardTrendMetric[];
+}) {
+  const chartDefinitions: Array<{ metric: DashboardTrendMetric; averageTitle: string; latestTitle: string; color: string; unit?: string }> = [
+    { metric: "runningHours", averageTitle: "Average Running Hours", latestTitle: "Running Hours", color: "#0f766e", unit: "h" },
+    { metric: "batteryVoltage", averageTitle: "Average Battery Voltage", latestTitle: "Battery Voltage", color: "#2563eb", unit: "V" },
+    { metric: "coolantTemperature", averageTitle: "Average Coolant Temperature", latestTitle: "Coolant Temperature", color: "#ca8a04", unit: "C" },
+    { metric: "starts", averageTitle: "Average Number of Starts", latestTitle: "Number of Starts", color: "#b91c1c" },
+    { metric: "fuelLevelPercentage", averageTitle: "Average Fuel Level", latestTitle: "Fuel Level", color: "#16a34a", unit: "%" }
+  ];
+
   return (
     <div className="grid gap-5 xl:grid-cols-2">
-      <TrendChart title="Average Running Hours" data={data} dataKey="runningHours" color="#0f766e" unit="h" />
-      <TrendChart title="Average Battery Voltage" data={data} dataKey="batteryVoltage" color="#2563eb" unit="V" />
-      <TrendChart title="Average Coolant Temperature" data={data} dataKey="coolantTemperature" color="#ca8a04" unit="C" />
-      <TrendChart title="Average Number of Starts" data={data} dataKey="starts" color="#b91c1c" />
+      {chartDefinitions.filter((chart) => visibleMetrics.includes(chart.metric)).map((chart) => (
+        <TrendChart
+          key={chart.metric}
+          title={mode === "average" ? chart.averageTitle : chart.latestTitle}
+          data={data}
+          dataKey={chart.metric}
+          color={chart.color}
+          unit={chart.unit}
+          mode={mode}
+        />
+      ))}
     </div>
   );
 }

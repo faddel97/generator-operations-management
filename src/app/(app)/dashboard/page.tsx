@@ -2,7 +2,7 @@ import Link from "next/link";
 import { AlertTriangle, ArrowRight, CalendarClock, CheckCircle2, ClipboardCheck, Gauge, HeartPulse, TimerOff } from "lucide-react";
 
 import { DemoBanner } from "@/components/demo-banner";
-import { OperationsCharts } from "@/components/dashboard/operations-charts";
+import { DashboardTrendFilters } from "@/components/dashboard/dashboard-trend-filters";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { getDashboardData, getGeneratorLabelMap } from "@/lib/data";
@@ -75,7 +75,7 @@ export default async function DashboardPage() {
           <p className="text-xs font-semibold uppercase text-teal-700">DSE Monitoring</p>
           <h3 className="mt-1 text-xl font-semibold text-slate-950">Operating Trends</h3>
         </div>
-        <OperationsCharts data={dashboard.trends} />
+        <DashboardTrendFilters averageData={dashboard.trends} latestData={dashboard.latestTrends} />
       </section>
 
       <div className="grid gap-5 xl:grid-cols-2">

@@ -2,8 +2,8 @@ import type { FleetTrendDatum, GeneratorOption, ModuleKey } from "@/types/app";
 import type { GenericRow } from "@/types/database";
 
 export const demoGeneratorOptions: GeneratorOption[] = [
-  { id: "DEMO-GEN-001", label: "DEMO-GEN-001 - Demo Manufacturer DG-500" },
-  { id: "DEMO-GEN-002", label: "DEMO-GEN-002 - Demo Manufacturer DG-800" }
+  { id: "DEMO-GEN-001", label: "DEMO-GEN-001 - Demo Manufacturer DG-500", fuelTankCapacity: 800 },
+  { id: "DEMO-GEN-002", label: "DEMO-GEN-002 - Demo Manufacturer DG-800", fuelTankCapacity: 1200 }
 ];
 
 export const demoGenerators: GenericRow[] = [
@@ -13,6 +13,7 @@ export const demoGenerators: GenericRow[] = [
     manufacturer: "Demo Manufacturer",
     model: "DG-500",
     rated_power_kva: 500,
+    fuel_tank_capacity: 800,
     duty: "standby",
     status: "healthy",
     health_score: 91,
@@ -24,6 +25,7 @@ export const demoGenerators: GenericRow[] = [
     manufacturer: "Demo Manufacturer",
     model: "DG-800",
     rated_power_kva: 800,
+    fuel_tank_capacity: 1200,
     duty: "prime",
     status: "attention",
     health_score: 72,
@@ -51,6 +53,8 @@ export const demoModuleRows: Record<ModuleKey, GenericRow[]> = {
       running_hours: 1280,
       battery_voltage: 26.4,
       coolant_temperature: 82,
+      fuel_level_liters: 560,
+      fuel_level_percentage: 70,
       approval_status: "approved"
     },
     {
@@ -60,6 +64,8 @@ export const demoModuleRows: Record<ModuleKey, GenericRow[]> = {
       running_hours: 2120,
       battery_voltage: 24.9,
       coolant_temperature: 88,
+      fuel_level_liters: 540,
+      fuel_level_percentage: 45,
       approval_status: "submitted"
     }
   ],
@@ -132,19 +138,23 @@ export const demoModuleRows: Record<ModuleKey, GenericRow[]> = {
 
 export const demoTrendData: FleetTrendDatum[] = [
   {
+    generatorId: "demo-generator-1",
     generatorName: "DEMO-GEN-001 - DG-500",
     readingCount: 6,
     runningHours: 1280,
     batteryVoltage: 26.1,
     coolantTemperature: 83,
-    starts: 61
+    starts: 61,
+    fuelLevelPercentage: 70
   },
   {
+    generatorId: "demo-generator-2",
     generatorName: "DEMO-GEN-002 - DG-800",
     readingCount: 5,
     runningHours: 2120,
     batteryVoltage: 24.9,
     coolantTemperature: 88,
-    starts: 74
+    starts: 74,
+    fuelLevelPercentage: 45
   }
 ];

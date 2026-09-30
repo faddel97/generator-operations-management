@@ -149,7 +149,7 @@ export const atsStuckOnGeneratorItems: ChecklistItem[] = [
   { key: "return_auto", label: "Return ATS to AUTO" }
 ];
 
-const maintenanceItems: ChecklistItem[] = [
+const maintenanceItemsBase: ChecklistItem[] = [
   { key: "overall_exhaust_line_condition", label: "Overall Exhaust Line Condition", section: "General Maintenance" },
   { key: "overall_engine_condition", label: "Overall Engine Condition", section: "General Maintenance" },
   { key: "overall_alternator_condition", label: "Overall Alternator Condition", section: "General Maintenance" },
@@ -186,6 +186,79 @@ const maintenanceItems: ChecklistItem[] = [
   { key: "terminal_panel_cable_entry_holes_covers_condition", label: "Terminal Panel Cable Entry Holes and Covers Condition", section: "General Maintenance" },
   { key: "oil_fuel_coolant_level_indicators_condition", label: "Oil, Fuel and Coolant Level Indicators Condition", section: "General Maintenance" }
 ];
+
+const maintenanceItemKeysByType: Record<string, string[]> = {
+  general: [
+    "overall_exhaust_line_condition",
+    "overall_engine_condition",
+    "overall_alternator_condition",
+    "overall_radiator_condition",
+    "overall_batteries_condition",
+    "fan_and_fan_v_belt_condition",
+    "battery_charger_condition",
+    "dynamo_and_wiring_condition",
+    "pipe_lines_joints_valves_condition",
+    "genset_controller_condition",
+    "alternator_outgoing_mccb_condition",
+    "genset_console_wiring_condition",
+    "jacket_water_heater_condition",
+    "alternator_heater_condition",
+    "genset_console_heater_condition",
+    "outgoing_bus_bar_insulators_condition",
+    "cable_terminations_and_cable_dressings_condition",
+    "terminal_panel_cable_entry_holes_covers_condition",
+    "oil_fuel_coolant_level_indicators_condition"
+  ],
+  mechanical_inspection: [
+    "overall_exhaust_line_condition",
+    "overall_engine_condition",
+    "overall_alternator_condition",
+    "overall_radiator_condition",
+    "fan_and_fan_v_belt_condition",
+    "pipe_lines_joints_valves_condition",
+    "oil_filters_and_oil_separator_condition",
+    "fuel_filters_condition",
+    "air_filters_condition",
+    "hood_bolts_condition",
+    "exhaust_line_top_bolts_condition",
+    "oil_filters_condition",
+    "radiator_cloth_condition",
+    "coolant_level_pipe_lines_condition",
+    "oil_level_oil_filling_drain_valve_condition",
+    "exhaust_silencers_condition",
+    "day_tank_oil_pipe_lines_condition",
+    "heat_area_and_pipe_insulation_condition",
+    "oil_fuel_coolant_level_indicators_condition"
+  ],
+  battery: [
+    "overall_batteries_condition",
+    "battery_charger_condition",
+    "dynamo_and_wiring_condition",
+    "earth_bolts_condition",
+    "genset_console_wiring_condition",
+    "emergency_push_button_indication_lamps_condition",
+    "cable_terminations_and_cable_dressings_condition"
+  ],
+  cleaning: [
+    "overall_engine_condition",
+    "overall_alternator_condition",
+    "overall_radiator_condition",
+    "radiator_cloth_condition",
+    "genset_controller_condition",
+    "hood_louvers_condition",
+    "exhaust_silencers_condition",
+    "floor_and_drain_area_condition",
+    "terminal_panel_cable_entry_holes_covers_condition"
+  ],
+  corrective: maintenanceItemsBase.map((item) => item.key)
+};
+
+const maintenanceItems: ChecklistItem[] = maintenanceItemsBase.map((item) => ({
+  ...item,
+  maintenanceTypes: Object.entries(maintenanceItemKeysByType)
+    .filter(([, keys]) => keys.includes(item.key))
+    .map(([type]) => type)
+}));
 
 const generatorFields: FieldDefinition[] = [
   { name: "generator_id", label: "Generator ID", type: "text", required: true, section: "Asset" },
@@ -327,6 +400,9 @@ export const moduleDefinitions: Record<string, ModuleDefinition> = {
       { name: "battery_voltage", label: "Battery Voltage", type: "number", step: "0.01", section: "DSE Data" },
       { name: "coolant_temperature", label: "Coolant Temperature", type: "number", step: "0.01", section: "DSE Data" },
       { name: "engine_speed_rpm", label: "Engine Speed RPM", type: "number", section: "DSE Data" },
+      { name: "fuel_tank_capacity_display", label: "Selected Generator Tank Capacity (L)", type: "number", readOnly: true, persist: false, section: "Fuel" },
+      { name: "fuel_level_liters", label: "Current Fuel in Tank (L)", type: "number", step: "0.01", min: 0, section: "Fuel" },
+      { name: "fuel_level_percentage", label: "Current Fuel Percentage", type: "number", step: "0.01", min: 0, max: 100, readOnly: true, section: "Fuel", helper: "Calculated automatically from the current fuel and the selected generator tank capacity." },
       { name: "alarm_screen", label: "Alarm Screen", type: "textarea", section: "DSE Data" },
       { name: "event_log", label: "Event Log", type: "textarea", section: "DSE Data" },
       { name: "backup_file_path", label: "Backup DSE File", type: "file", storageBucket: "operation-attachments", targetColumn: "backup_file_path", section: "Files" },
@@ -338,6 +414,8 @@ export const moduleDefinitions: Record<string, ModuleDefinition> = {
       { key: "running_hours", label: "Running Hours", type: "number" },
       { key: "battery_voltage", label: "Battery V", type: "number" },
       { key: "coolant_temperature", label: "Coolant", type: "number" },
+      { key: "fuel_level_liters", label: "Fuel (L)", type: "number" },
+      { key: "fuel_level_percentage", label: "Fuel %", type: "number" },
       { key: "approval_status", label: "Approval", type: "approval" }
     ]
   },
@@ -448,7 +526,7 @@ export const moduleDefinitions: Record<string, ModuleDefinition> = {
           { label: "Corrective", value: "corrective" }
         ]
       },
-      { name: "completed_items", label: "General Maintenance Checklist", type: "checklist", checklistItems: maintenanceItems, options: checklistStatusOptions, section: "General Checklist" },
+      { name: "completed_items", label: "Maintenance Characteristics", type: "checklist", checklistItems: maintenanceItems, options: checklistStatusOptions, section: "Type-specific Characteristics", helper: "Only characteristics for the selected maintenance type are shown. For corrective work, check only the repaired or inspected characteristics to include in the report." },
       { name: "picture_paths", label: "Maintenance Pictures", type: "file", accept: "image/*", multiple: true, storageBucket: "operation-attachments", targetColumn: "picture_paths", section: "Pictures" },
       { name: "last_maintenance_date", label: "Last Maintenance Date", type: "date", section: "Due Date" },
       { name: "next_due_date", label: "Next Due Date", type: "date", helper: "Leave blank to calculate automatically in Supabase.", section: "Due Date" },

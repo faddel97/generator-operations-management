@@ -194,9 +194,33 @@ function formatCellValue(value: unknown, column: TableColumn, generatorMap: Map<
   return humanize(String(value));
 }
 
-function drawRecord(doc: PDFKit.PDFDocument, row: GenericRow, columns: TableColumn[], generatorMap: Map<string, string>, index: number) {
+function maintenanceCharacteristicLines(row: GenericRow) {
+  if (!row.completed_items || typeof row.completed_items !== "object" || Array.isArray(row.completed_items)) {
+    return [];
+  }
+
+  const definition = getModuleDefinition("maintenance-records");
+  const checklistField = definition.fields.find((field) => field.name === "completed_items");
+  const labelMap = new Map((checklistField?.checklistItems ?? []).map((item) => [item.key, item.label]));
+
+  return Object.entries(row.completed_items).flatMap(([key, rawValue]) => {
+    if (!rawValue || typeof rawValue !== "object" || Array.isArray(rawValue)) {
+      return [];
+    }
+
+    const item = rawValue as Record<string, unknown>;
+    const status = typeof item.status === "string" && item.status ? item.status : "Recorded";
+    const notes = typeof item.notes === "string" && item.notes ? ` - ${item.notes}` : "";
+    return [`Characteristic: ${labelMap.get(key) ?? humanize(key)} — ${status}${notes}`];
+  });
+}
+
+function drawRecord(doc: PDFKit.PDFDocument, row: GenericRow, columns: TableColumn[], generatorMap: Map<string, string>, index: number, moduleKey: string) {
   const boxWidth = contentWidth(doc);
-  const lines = columns.map((column) => `${column.label}: ${formatCellValue(row[column.key], column, generatorMap)}`);
+  const lines = [
+    ...columns.map((column) => `${column.label}: ${formatCellValue(row[column.key], column, generatorMap)}`),
+    ...(moduleKey === "maintenance-records" ? maintenanceCharacteristicLines(row) : [])
+  ];
   const body = lines.join("\n");
   const height = Math.max(58, doc.fontSize(9).heightOfString(body, { width: boxWidth - 24 }) + 34);
 
@@ -220,7 +244,7 @@ function drawDataSection(doc: PDFKit.PDFDocument, section: ReportExportSection, 
   }
 
   const rows = section.rows.slice(0, 40);
-  rows.forEach((row, index) => drawRecord(doc, row, definition.columns, generatorMap, index));
+  rows.forEach((row, index) => drawRecord(doc, row, definition.columns, generatorMap, index, section.moduleKey));
 
   if (section.rows.length > rows.length) {
     doc.fillColor(slate500).fontSize(9).text(`${section.rows.length - rows.length} additional records are available in the CSV export.`, margin, doc.y, { width: contentWidth(doc) });
