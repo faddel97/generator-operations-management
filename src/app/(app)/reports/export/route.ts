@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { getModuleRecord, getModuleRowsForExport } from "@/lib/data";
 import { buildReportExcel } from "@/lib/report-excel";
-import { getReportExportSections, isReportExportType, isTemplatedExcelReportType, normalizeFileName, reportExportConfigs, reportSectionsToCsv } from "@/lib/report-export";
+import { getReportExportSections, isReportExportType, isTemplatedExcelReportType, normalizeFileName, reportExportConfigs, reportSectionsToCsv, resolveReportPeriod } from "@/lib/report-export";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -48,6 +48,7 @@ export async function GET(request: NextRequest) {
   let reportTitle: string | undefined;
   let periodStart: string | undefined;
   let periodEnd: string | undefined;
+  let reportCreatedAt: string | undefined;
 
   if (reportId) {
     const { row, error } = await getModuleRecord("reports", reportId);
@@ -64,11 +65,21 @@ export async function GET(request: NextRequest) {
     reportTitle = typeof row.title === "string" ? row.title : undefined;
     periodStart = typeof row.period_start === "string" ? row.period_start : undefined;
     periodEnd = typeof row.period_end === "string" ? row.period_end : undefined;
+    reportCreatedAt = typeof row.created_at === "string" ? row.created_at : undefined;
   }
 
   if (!isReportExportType(reportType)) {
     return new NextResponse("Unknown report export type.", { status: 400 });
   }
+
+  const resolvedPeriod = resolveReportPeriod({
+    reportType,
+    periodStart,
+    periodEnd,
+    referenceDate: reportCreatedAt ? new Date(reportCreatedAt) : new Date()
+  });
+  periodStart = resolvedPeriod.periodStart;
+  periodEnd = resolvedPeriod.periodEnd;
 
   const config = reportExportConfigs[reportType];
   const sections = await getReportExportSections({ reportType, periodStart, periodEnd });

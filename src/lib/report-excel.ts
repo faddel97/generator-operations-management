@@ -21,10 +21,53 @@ const sheetNames: Partial<Record<ModuleKey, string>> = {
 };
 
 const genericSheetWidths: Partial<Record<ModuleKey, number[]>> = {
-  "weekly-inspections": [18, 42, 18, 14, 45],
-  "ats-tests": [18, 42, 12, 12, 12, 14],
-  "maintenance-records": [18, 42, 20, 18, 14],
-  alarms: [18, 42, 14, 20, 12]
+  "weekly-inspections": [18, 42, 18, 14, 55, 45],
+  "ats-tests": [18, 42, 12, 12, 12, 12, 16, 14, 70, 45],
+  "maintenance-records": [18, 42, 20, 18, 18, 22, 14, 70, 24, 45],
+  alarms: [18, 42, 14, 20, 12, 55]
+};
+
+const reportSheetColumns: Partial<Record<ModuleKey, TableColumn[]>> = {
+  "weekly-inspections": [
+    { key: "inspection_date", label: "Date", type: "date" },
+    { key: "generator_id", label: "Generator" },
+    { key: "overall_status", label: "Overall Status", type: "status" },
+    { key: "approval_status", label: "Approval", type: "approval" },
+    { key: "checklist", label: "Inspection Checklist" },
+    { key: "notes", label: "Notes" }
+  ],
+  "ats-tests": [
+    { key: "test_date", label: "Date", type: "date" },
+    { key: "generator_id", label: "Generator" },
+    { key: "generator_started", label: "Started", type: "boolean" },
+    { key: "ats_transfer", label: "Transfer", type: "boolean" },
+    { key: "ats_return", label: "Return", type: "boolean" },
+    { key: "breaker_operation", label: "Breaker", type: "boolean" },
+    { key: "alarm_during_test", label: "Alarm During Test", type: "boolean" },
+    { key: "approval_status", label: "Approval", type: "approval" },
+    { key: "checklist", label: "Procedure Checklist" },
+    { key: "notes", label: "Notes" }
+  ],
+  "maintenance-records": [
+    { key: "maintenance_date", label: "Date", type: "date" },
+    { key: "generator_id", label: "Generator" },
+    { key: "maintenance_type", label: "Type" },
+    { key: "last_maintenance_date", label: "Last Maintenance", type: "date" },
+    { key: "next_due_date", label: "Next Due", type: "date" },
+    { key: "permit_number", label: "Permit Number" },
+    { key: "approval_status", label: "Approval", type: "approval" },
+    { key: "completed_items", label: "Completed Maintenance Items" },
+    { key: "signature", label: "Signature" },
+    { key: "notes", label: "Notes" }
+  ],
+  alarms: [
+    { key: "alarm_date", label: "Date", type: "date" },
+    { key: "generator_id", label: "Generator" },
+    { key: "severity", label: "Severity", type: "status" },
+    { key: "source", label: "Source" },
+    { key: "resolved", label: "Resolved", type: "boolean" },
+    { key: "message", label: "Message" }
+  ]
 };
 
 type WorkbookStyles = {
@@ -158,7 +201,32 @@ function buildGeneratorMaps(generatorRows: GenericRow[]) {
   return { labelMap, rowMap };
 }
 
-function formatColumnValue(row: GenericRow, column: TableColumn, generatorLabels: Map<string, string>) {
+function structuredValue(value: object, moduleKey: ModuleKey, fieldName: string) {
+  const definition = getModuleDefinition(moduleKey);
+  const field = definition.fields.find((item) => item.name === fieldName);
+  const itemLabels = new Map((field?.checklistItems ?? []).map((item) => [item.key, item.label]));
+
+  return Object.entries(value)
+    .map(([key, item]) => {
+      const label = itemLabels.get(key) ?? humanize(key);
+
+      if (typeof item === "boolean") {
+        return `${label}: ${item ? "Yes" : "No"}`;
+      }
+
+      if (item && typeof item === "object" && !Array.isArray(item)) {
+        const details = item as Record<string, unknown>;
+        const status = details.status === null || details.status === undefined ? "" : String(details.status);
+        const notes = typeof details.notes === "string" && details.notes.trim() ? ` (${details.notes.trim()})` : "";
+        return `${label}: ${status || "Recorded"}${notes}`;
+      }
+
+      return `${label}: ${String(item)}`;
+    })
+    .join("; ");
+}
+
+function formatColumnValue(row: GenericRow, column: TableColumn, moduleKey: ModuleKey, generatorLabels: Map<string, string>) {
   const value = row[column.key];
 
   if (value === null || value === undefined || value === "") {
@@ -182,7 +250,7 @@ function formatColumnValue(row: GenericRow, column: TableColumn, generatorLabels
   }
 
   if (typeof value === "object") {
-    return "Recorded";
+    return structuredValue(value, moduleKey, column.key);
   }
 
   if (column.type === "status" || column.type === "approval" || ["duty", "severity", "maintenance_type"].includes(column.key)) {
@@ -363,6 +431,7 @@ function writeGenericSection({
   styles: WorkbookStyles;
 }) {
   const definition = getModuleDefinition(moduleKey);
+  const columns = reportSheetColumns[moduleKey] ?? definition.columns;
 
   if (!included || rows.length === 0) {
     writeEmptySheet(sheet, definition.title, included ? "No records found for this report period." : "Not included in this report type.", styles);
@@ -371,20 +440,20 @@ function writeGenericSection({
 
   clearSheetValues(sheet);
   sheet.freezePanes("A2");
-  setColumnWidths(sheet, genericSheetWidths[moduleKey] ?? definition.columns.map(() => 20));
+  setColumnWidths(sheet, genericSheetWidths[moduleKey] ?? columns.map(() => 20));
   writeHeaders(
     sheet,
-    definition.columns.map((column) => column.label),
+    columns.map((column) => column.label),
     styles
   );
 
   rows.forEach((row, rowIndex) => {
-    definition.columns.forEach((column, columnIndex) => {
-      setCell(sheet.cell(rowIndex + 2, columnIndex + 1), formatColumnValue(row, column, generatorLabels), styleForColumn(row, column, styles));
+    columns.forEach((column, columnIndex) => {
+      setCell(sheet.cell(rowIndex + 2, columnIndex + 1), formatColumnValue(row, column, moduleKey, generatorLabels), styleForColumn(row, column, styles));
     });
   });
 
-  sheet.range(1, 1, rows.length + 1, definition.columns.length).autoFilter();
+  sheet.range(1, 1, rows.length + 1, columns.length).autoFilter();
 }
 
 function sectionSummary(moduleKey: ModuleKey, rows: GenericRow[] | undefined, generatorRows: GenericRow[]) {

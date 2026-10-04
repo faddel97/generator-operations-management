@@ -10,7 +10,7 @@ export type TemplatedExcelReportType = Extract<ReportExportType, "weekly" | "mon
 export const reportExportConfigs: Record<ReportExportType, { label: string; modules: ModuleKey[] }> = {
   weekly: {
     label: "Weekly Report",
-    modules: ["weekly-inspections", "dse-readings", "maintenance-records", "alarms"]
+    modules: ["weekly-inspections", "dse-readings", "ats-tests", "maintenance-records", "alarms"]
   },
   monthly: {
     label: "Monthly Report",
@@ -50,6 +50,57 @@ export function isReportExportType(value: string | null): value is ReportExportT
 
 export function isTemplatedExcelReportType(value: ReportExportType): value is TemplatedExcelReportType {
   return value === "weekly" || value === "monthly";
+}
+
+function dateOnly(value?: string) {
+  return value?.match(/^\d{4}-\d{2}-\d{2}/)?.[0];
+}
+
+function riyadhCalendarDate(date: Date) {
+  const parts = new Intl.DateTimeFormat("en", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    timeZone: "Asia/Riyadh"
+  }).formatToParts(date);
+  const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((item) => item.type === type)?.value ?? "";
+
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
+function addCalendarDays(value: string, days: number) {
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day + days));
+
+  return date.toISOString().slice(0, 10);
+}
+
+/**
+ * Weekly and monthly workbooks always need a reporting window. Saved reports
+ * keep their selected dates; quick exports and older saved reports get a
+ * sensible period based on the export/report creation date.
+ */
+export function resolveReportPeriod({
+  reportType,
+  periodStart,
+  periodEnd,
+  referenceDate = new Date()
+}: {
+  reportType: ReportExportType;
+  periodStart?: string;
+  periodEnd?: string;
+  referenceDate?: Date;
+}) {
+  if (!isTemplatedExcelReportType(reportType)) {
+    return { periodStart, periodEnd };
+  }
+
+  const safeReferenceDate = Number.isNaN(referenceDate.getTime()) ? new Date() : referenceDate;
+  const resolvedEnd = dateOnly(periodEnd) ?? riyadhCalendarDate(safeReferenceDate);
+  const resolvedStart =
+    dateOnly(periodStart) ?? (reportType === "weekly" ? addCalendarDays(resolvedEnd, -6) : `${resolvedEnd.slice(0, 7)}-01`);
+
+  return { periodStart: resolvedStart, periodEnd: resolvedEnd };
 }
 
 export function csvEscape(value: unknown) {
