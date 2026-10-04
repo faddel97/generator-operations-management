@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Check, Download, Edit, Eye, FileDown, Trash2, X } from "lucide-react";
+import { Check, Download, Edit, Eye, FileDown, FileSpreadsheet, Trash2, X } from "lucide-react";
 
 import { deleteModuleRecordAction, reviewRecordAction } from "@/lib/actions";
 import { formatDate, formatNumber, humanize } from "@/lib/format";
@@ -114,9 +114,9 @@ export function ModuleTable({
                       <a
                         href={`${definition.path}/export?reportId=${row.id}`}
                         className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-slate-200 text-slate-700 hover:bg-slate-50"
-                        title="Export CSV"
+                        title={row.report_type === "weekly" || row.report_type === "monthly" ? "Export Excel" : "Export CSV"}
                       >
-                        <Download className="h-4 w-4" aria-hidden="true" />
+                        {row.report_type === "weekly" || row.report_type === "monthly" ? <FileSpreadsheet className="h-4 w-4" aria-hidden="true" /> : <Download className="h-4 w-4" aria-hidden="true" />}
                       </a>
                       <a
                         href={`${definition.path}/pdf?reportId=${row.id}`}

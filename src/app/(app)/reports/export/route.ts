@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getModuleRecord } from "@/lib/data";
-import { getReportExportSections, isReportExportType, normalizeFileName, reportExportConfigs, reportSectionsToCsv } from "@/lib/report-export";
+import { getModuleRecord, getModuleRowsForExport } from "@/lib/data";
+import { buildReportExcel } from "@/lib/report-excel";
+import { getReportExportSections, isReportExportType, isTemplatedExcelReportType, normalizeFileName, reportExportConfigs, reportSectionsToCsv } from "@/lib/report-export";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -18,6 +19,23 @@ async function requireExportSession() {
   return user;
 }
 
+function riyadhDateStamp(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    timeZone: "Asia/Riyadh"
+  }).formatToParts(date);
+  const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((item) => item.type === type)?.value ?? "";
+
+  return `${part("year")}-${part("month")}-${part("day")}`;
+}
+
+function reportDateStamp(periodEnd?: string) {
+  const periodDate = periodEnd?.match(/^\d{4}-\d{2}-\d{2}/)?.[0];
+  return periodDate ?? riyadhDateStamp();
+}
+
 export async function GET(request: NextRequest) {
   const user = await requireExportSession();
 
@@ -32,7 +50,11 @@ export async function GET(request: NextRequest) {
   let periodEnd: string | undefined;
 
   if (reportId) {
-    const { row } = await getModuleRecord("reports", reportId);
+    const { row, error } = await getModuleRecord("reports", reportId);
+
+    if (error) {
+      return new NextResponse(error, { status: 500 });
+    }
 
     if (!row) {
       return new NextResponse("Report not found.", { status: 404 });
@@ -50,6 +72,33 @@ export async function GET(request: NextRequest) {
 
   const config = reportExportConfigs[reportType];
   const sections = await getReportExportSections({ reportType, periodStart, periodEnd });
+
+  if (isTemplatedExcelReportType(reportType)) {
+    const { rows: generatorRows, error } = await getModuleRowsForExport("generators");
+
+    if (error) {
+      return new NextResponse(error, { status: 500 });
+    }
+
+    const workbook = await buildReportExcel({
+      reportType,
+      reportLabel: config.label,
+      reportTitle,
+      periodStart,
+      periodEnd,
+      sections,
+      generatorRows
+    });
+    const fileName = `GOM_${reportType === "weekly" ? "Weekly" : "Monthly"}_Report_Excel_${reportDateStamp(periodEnd)}.xlsx`;
+
+    return new NextResponse(new Uint8Array(workbook), {
+      headers: {
+        "Cache-Control": "no-store",
+        "Content-Disposition": `attachment; filename="${fileName}"`,
+        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      }
+    });
+  }
 
   const csv = reportSectionsToCsv({
     reportLabel: config.label,

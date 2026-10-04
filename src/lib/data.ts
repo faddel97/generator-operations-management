@@ -19,6 +19,7 @@ type DynamicSelectBuilder<T> = {
   select(columns?: string): DynamicSelectBuilder<T>;
   order(column: string, options?: { ascending?: boolean }): DynamicSelectBuilder<T>;
   limit(count: number): Promise<{ data: T[] | null; error: QueryError | null }>;
+  range(from: number, to: number): Promise<{ data: T[] | null; error: QueryError | null }>;
   eq(column: string, value: string): DynamicFilterBuilder<T>;
   maybeSingle(): Promise<{ data: T | null; error: QueryError | null }>;
 };
@@ -547,6 +548,45 @@ export async function getModuleRows(moduleKey: ModuleKey): Promise<{ rows: Gener
 
   const actorProfiles = moduleKey === "event-logs" ? await getActorProfiles(supabase) : new Map<string, GenericRow>();
   return { rows: (data ?? []).map((row) => applyActorDisplayName(moduleKey, row, actorProfiles) ?? row), isDemo: false };
+}
+
+/**
+ * Fetch every row needed by a file export. The normal module query is
+ * intentionally capped for responsive screen rendering, but that cap must
+ * never truncate an operational report.
+ */
+export async function getModuleRowsForExport(moduleKey: ModuleKey): Promise<{ rows: GenericRow[]; isDemo: boolean; error?: string }> {
+  if (!isSupabaseConfigured()) {
+    return { rows: await getDemoRows(moduleKey), isDemo: true };
+  }
+
+  const definition = getModuleDefinition(moduleKey);
+  const supabase = await getDynamicSupabase();
+  const orderColumn = definition.dateField ?? "created_at";
+  const pageSize = 1000;
+  const rows: GenericRow[] = [];
+
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await supabase
+      .from(definition.table)
+      .select("*")
+      .order(orderColumn, { ascending: false })
+      .range(from, from + pageSize - 1);
+
+    if (error) {
+      return { rows: [], isDemo: false, error: error.message };
+    }
+
+    const page = data ?? [];
+    rows.push(...page);
+
+    if (page.length < pageSize) {
+      break;
+    }
+  }
+
+  const actorProfiles = moduleKey === "event-logs" ? await getActorProfiles(supabase) : new Map<string, GenericRow>();
+  return { rows: rows.map((row) => applyActorDisplayName(moduleKey, row, actorProfiles) ?? row), isDemo: false };
 }
 
 export async function getModuleRecord(moduleKey: ModuleKey, id: string) {

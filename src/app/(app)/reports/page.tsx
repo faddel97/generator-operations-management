@@ -1,4 +1,4 @@
-import { Download, FileDown, FileText } from "lucide-react";
+import { Download, FileDown, FileSpreadsheet, FileText } from "lucide-react";
 
 import { DemoBanner } from "@/components/demo-banner";
 import { moduleActionErrorMessage, moduleSaveMessage } from "@/components/module/module-pages";
@@ -6,7 +6,7 @@ import { ModuleTable } from "@/components/module/module-table";
 import { PageHeader } from "@/components/page-header";
 import { getGeneratorLabelMap, getModuleRows } from "@/lib/data";
 import { getModuleDefinition } from "@/lib/module-definitions";
-import { reportExportOptions } from "@/lib/report-export";
+import { isTemplatedExcelReportType, reportExportOptions } from "@/lib/report-export";
 import { requireAuthenticated } from "@/lib/auth";
 
 const reportTypes = reportExportOptions;
@@ -36,8 +36,8 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
             <h3 className="font-semibold text-slate-950">{type.label}</h3>
             <div className="mt-4 flex flex-wrap gap-2">
               <a href={`/reports/export?type=${type.value}`} className="inline-flex min-h-9 items-center gap-2 rounded-md border border-teal-700 px-3 text-sm font-semibold text-teal-800 hover:bg-teal-50">
-                <Download className="h-4 w-4" aria-hidden="true" />
-                CSV
+                {isTemplatedExcelReportType(type.value) ? <FileSpreadsheet className="h-4 w-4" aria-hidden="true" /> : <Download className="h-4 w-4" aria-hidden="true" />}
+                {isTemplatedExcelReportType(type.value) ? "Excel" : "CSV"}
               </a>
               <a href={`/reports/pdf?type=${type.value}`} className="inline-flex min-h-9 items-center gap-2 rounded-md bg-teal-700 px-3 text-sm font-semibold text-white hover:bg-teal-800">
                 <FileDown className="h-4 w-4" aria-hidden="true" />

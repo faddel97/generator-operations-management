@@ -1,10 +1,11 @@
-import { getModuleRows } from "@/lib/data";
+import { getModuleRowsForExport } from "@/lib/data";
 import { formatDate } from "@/lib/format";
 import { getModuleDefinition } from "@/lib/module-definitions";
 import type { ModuleKey } from "@/types/app";
 import type { GenericRow } from "@/types/database";
 
 export type ReportExportType = "weekly" | "monthly" | "generator_health" | "maintenance_due" | "alarm_history" | "event_log_analysis";
+export type TemplatedExcelReportType = Extract<ReportExportType, "weekly" | "monthly">;
 
 export const reportExportConfigs: Record<ReportExportType, { label: string; modules: ModuleKey[] }> = {
   weekly: {
@@ -47,6 +48,10 @@ export function isReportExportType(value: string | null): value is ReportExportT
   return Boolean(value && value in reportExportConfigs);
 }
 
+export function isTemplatedExcelReportType(value: ReportExportType): value is TemplatedExcelReportType {
+  return value === "weekly" || value === "monthly";
+}
+
 export function csvEscape(value: unknown) {
   if (value === null || value === undefined) {
     return "";
@@ -81,7 +86,7 @@ export function isWithinPeriod(row: GenericRow, moduleKey: ModuleKey, periodStar
   const rowTime = getComparableDate(row[definition.dateField ?? "created_at"]);
 
   if (rowTime === null) {
-    return true;
+    return false;
   }
 
   const startTime = periodStart ? getComparableDate(periodStart) : null;
@@ -133,7 +138,7 @@ export async function getReportExportSections({
 
   return Promise.all(
     config.modules.map(async (moduleKey) => {
-      const { rows, error } = await getModuleRows(moduleKey);
+      const { rows, error } = await getModuleRowsForExport(moduleKey);
 
       if (error) {
         throw new Error(error);

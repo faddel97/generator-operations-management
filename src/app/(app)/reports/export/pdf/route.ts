@@ -247,7 +247,7 @@ function drawDataSection(doc: PDFKit.PDFDocument, section: ReportExportSection, 
   rows.forEach((row, index) => drawRecord(doc, row, definition.columns, generatorMap, index, section.moduleKey));
 
   if (section.rows.length > rows.length) {
-    doc.fillColor(slate500).fontSize(9).text(`${section.rows.length - rows.length} additional records are available in the CSV export.`, margin, doc.y, { width: contentWidth(doc) });
+    doc.fillColor(slate500).fontSize(9).text(`${section.rows.length - rows.length} additional records are available in the spreadsheet export.`, margin, doc.y, { width: contentWidth(doc) });
     doc.moveDown(1.1);
   }
 }
