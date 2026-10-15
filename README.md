@@ -9,6 +9,21 @@ A professional web system for generator asset operations, inspections, DSE readi
 - Recharts analytics
 - Role-based access control for Admin, Supervisor, Technician, and Viewer
 
+## 3D Assembly Lab prototype
+
+Open **Parts > Explore the 3D Assembly Lab**, or `/parts/assembly`. The browser loads the Three.js viewer only on this page. It uses local, authored geometry and lighting; no remote model/font service is required.
+
+- Drag to orbit, scroll or pinch to zoom, or use the visible + / - buttons. Right-drag pans. Focus and camera presets help inspect small components.
+- Select components in the model or searchable list; isolate one to inspect and rotate it independently. Returning restores its design placement.
+- Use the separation slider or Assemble / Explode buttons without losing the current close-up or zoom. Show internal components, illustrative dimensions, or selectable connection paths.
+- Explore the assembly story, installation/operation planning, component inspection notes and source scopes.
+
+The initial package is a representative four-cylinder diesel training assembly, **not an accurate replica of an installed asset**. Geometry, nominal dimensions, typical materials and routing are labeled illustrative. OEM part numbers, mass, exact tools, torques and replacement procedures remain unverified. Catalog photos are reference images, not matches to the authored geometry. The model is separate from the operational asset register.
+
+`src/lib/assembly/training-generator.ts` contains the typed equipment package: component IDs, hierarchy, placement, nominal size, separation vectors, inspection metadata, connection endpoints, stages and sources. Rendering and inspector components are in `src/components/assembly/`. New verified equipment should have its own versioned package; do not overwrite this training definition with unverified asset claims. Detailed imported CAD/GLB ingestion is not implemented in this prototype.
+
+Validate with `npm run build` and `npm run lint`. The real-browser check is `node scripts/check-assembly-viewer.cjs` against a running server (default `http://localhost:3002`); set `ASSEMBLY_TEST_URL`, `PLAYWRIGHT_MODULE` and `CHROME_PATH` for the local environment. It checks orbit, zoom buttons, mouse wheel, touch pinch, isolation/reset, connections, walkthroughs, filtering and mobile overflow. An authenticated deployment needs an authenticated test context, or a separate demo preview with empty Supabase settings. Do not alter production authentication for testing.
+
 ## Local Setup
 
 1. Install dependencies:

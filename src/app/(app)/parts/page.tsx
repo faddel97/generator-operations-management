@@ -1,5 +1,6 @@
 import Image from "next/image";
-import { ChevronDown, Cog, ListChecks } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Box, ChevronDown, Cog, ListChecks } from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
 import { generatorPartCategories, generatorPartImagePath, generatorParts } from "@/lib/generator-parts";
@@ -11,6 +12,11 @@ export default function GeneratorPartsPage() {
         title="Generator Parts"
         description="Component-level reference for how a diesel generator is built, what each part does, and what technicians should monitor during inspection and maintenance."
       />
+
+      <Link href="/parts/assembly" className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-teal-200 bg-teal-50 px-5 py-4 transition hover:bg-teal-100/70">
+        <div className="flex items-center gap-3"><Box className="h-6 w-6 text-teal-700" /><div><h3 className="text-sm font-semibold text-teal-950">Explore the 3D Assembly Lab</h3><p className="mt-1 text-xs text-teal-800">Rotate, disassemble and inspect a training generator, its components and connections.</p></div></div>
+        <span className="inline-flex items-center gap-2 text-xs font-semibold text-teal-800">Open prototype <ArrowRight className="h-4 w-4" /></span>
+      </Link>
 
       <section className="rounded-md border border-slate-200 bg-white">
         <div className="border-b border-slate-200 px-5 py-4">
