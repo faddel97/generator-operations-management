@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Box, Check, ChevronLeft, ChevronRight, Eye, EyeOff, Focus, Info, Layers3, Maximize2, Minus, Plus, RotateCcw, Search, Unplug, Wrench } from "lucide-react";
 
 import { lifecycleTopics, trainingGenerator, type EquipmentPackage } from "@/lib/assembly/training-generator";
@@ -35,6 +35,7 @@ export function AssemblyWorkspace({ equipment = trainingGenerator }: { equipment
   const [focusKey, setFocusKey] = useState(0);
   const [cameraView, setCameraView] = useState<"perspective" | "front" | "top">("perspective");
   const [zoomRequest, setZoomRequest] = useState<{ direction: "in" | "out"; sequence: number }>({ direction: "in", sequence: 0 });
+  const [pivotRequest, setPivotRequest] = useState<{ kind: "part" | "assembly"; partId: string | null; sequence: number }>({ kind: "assembly", partId: null, sequence: 0 });
   const animation = useRef<number | null>(null);
   const selected = equipment.parts.find((part) => part.id === selectedId) ?? equipment.parts[0];
   const stageIds = mode === "assembly" ? Array.from(new Set(equipment.stages.slice(0, step + 1).flatMap((stage) => stage.parts))) : null;
@@ -43,8 +44,12 @@ export function AssemblyWorkspace({ equipment = trainingGenerator }: { equipment
   const partConnections = equipment.connections.filter((edge) => edge.from === selected.id || edge.to === selected.id);
   const visibleCount = equipment.parts.filter((part) => !hiddenIds.includes(part.id) && (!part.internal || internals || (isolate && selected.id === part.id)) && (!isolate || part.id === selected.id) && (!stageIds || stageIds.includes(part.id))).length;
   const photoPart = generatorParts.find((part) => part.number === selected.catalogNumber);
+  const pivotPart = pivotRequest.partId ? equipment.parts.find((part) => part.id === pivotRequest.partId) : null;
 
   useEffect(() => () => { if (animation.current !== null) cancelAnimationFrame(animation.current); }, []);
+  const clearCameraFocus = useCallback(() => {
+    setPivotRequest((request) => ({ kind: "assembly", partId: null, sequence: request.sequence + 1 }));
+  }, []);
   function animateExplode(target: number) {
     if (animation.current !== null) cancelAnimationFrame(animation.current);
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setExplode(target); return; }
@@ -62,6 +67,7 @@ export function AssemblyWorkspace({ equipment = trainingGenerator }: { equipment
     const part = equipment.parts.find((item) => item.id === id);
     if (!part) return;
     setSelectedId(id);
+    setPivotRequest((request) => ({ kind: "part", partId: id, sequence: request.sequence + 1 }));
     setSelectedConnection(null);
     setHiddenIds((ids) => ids.filter((item) => item !== id));
     if (part.internal) setInternals(true);
@@ -72,6 +78,7 @@ export function AssemblyWorkspace({ equipment = trainingGenerator }: { equipment
     if (!edge) return;
     setSelectedConnection(id);
     setSelectedId(edge.from);
+    setPivotRequest((request) => ({ kind: "part", partId: edge.from, sequence: request.sequence + 1 }));
     setHiddenIds((ids) => ids.filter((item) => item !== edge.from && item !== edge.to));
     setConnections(true); setIsolate(false); setMode("explore");
     if (equipment.parts.some((part) => (part.id === edge.from || part.id === edge.to) && part.internal)) setInternals(true);
@@ -81,11 +88,13 @@ export function AssemblyWorkspace({ equipment = trainingGenerator }: { equipment
     if (animation.current !== null) cancelAnimationFrame(animation.current);
     setExplode(0); setIsolate(false); setHiddenIds([]); setInternals(false); setConnections(true); setDimensions(false);
     setMode("explore"); setStep(0); setTab("overview"); setQuery(""); setSystem("All systems"); setSelectedId("engine"); setSelectedConnection(null); setCameraView("perspective"); setResetKey((key) => key + 1);
+    clearCameraFocus();
   }
   function changeStep(index: number) {
     setStep(index); setMode("assembly"); setIsolate(false); setSelectedConnection(null);
     setHiddenIds([]); setSelectedId(equipment.stages[index].parts[0]);
     setResetKey((key) => key + 1);
+    clearCameraFocus();
   }
 
   return <div className="space-y-5">
@@ -117,16 +126,16 @@ export function AssemblyWorkspace({ equipment = trainingGenerator }: { equipment
         <div className="flex items-center justify-between border-t border-slate-100 px-3 py-3 text-[10px] text-slate-500"><span>{visibleCount} visible</span>{hiddenIds.length > 0 && <button type="button" className="font-medium text-teal-700" onClick={() => setHiddenIds([])}>Show hidden ({hiddenIds.length})</button>}</div>
       </aside>
 
-      <section className="order-1 min-w-0 overflow-hidden rounded-lg border border-slate-800 bg-[#15252b] 2xl:order-2" aria-label="Interactive 3D assembly">
-        <header className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3"><div><span className="text-[10px] font-semibold uppercase tracking-[.15em] text-teal-300">{isolate ? "Part inspection" : "Assembly viewport"}</span><p className="mt-1 text-xs text-slate-300">{isolate ? selected.name : equipment.name}</p></div><span className="rounded-full bg-white/5 px-2 py-1 text-[10px] text-slate-400">{isolate ? "Independent orbit" : "Perspective · 3D"}</span></header>
+      <section className="order-1 min-w-0 overflow-hidden rounded-lg border border-slate-800 bg-[#15252b] 2xl:order-2" aria-label="Interactive 3D assembly" data-camera-pivot={pivotRequest.kind === "part" ? pivotRequest.partId : "assembly"}>
+        <header className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3"><div><span className="text-[10px] font-semibold uppercase tracking-[.15em] text-teal-300">{isolate ? "Part inspection" : "Assembly viewport"}</span><p className="mt-1 text-xs text-slate-300">{isolate ? selected.name : equipment.name}</p></div><span className="rounded-full bg-white/5 px-2 py-1 text-[10px] text-slate-400">{isolate ? "Independent orbit" : pivotPart ? `Pivot · ${pivotPart.name}` : "Assembly pivot"}</span></header>
         <div className="relative h-[410px] sm:h-[520px] 2xl:h-[580px]">
-          <AssemblyScene equipment={equipment} selectedId={selected.id} explode={explode} showInternals={internals} showConnections={connections} showDimensions={dimensions} isolate={isolate} hiddenIds={hiddenIds} stageIds={stageIds} selectedConnection={selectedConnection} resetKey={resetKey} focusKey={focusKey} cameraView={cameraView} zoomRequest={zoomRequest} onSelect={selectPart} onConnectionSelect={selectConnection} />
-          <div className="absolute right-3 top-3 flex gap-1.5">{(["perspective", "front", "top"] as const).map((view) => <button key={view} type="button" aria-label={`${view} camera view`} aria-pressed={cameraView === view} onClick={() => { setCameraView(view); setResetKey((key) => key + 1); }} className={`rounded border px-2 py-1.5 text-[10px] capitalize backdrop-blur ${cameraView === view ? "border-teal-400/40 bg-teal-400/10 text-teal-200" : "border-white/10 bg-slate-950/30 text-slate-400 hover:text-white"}`}>{view === "perspective" ? "3D" : view}</button>)}</div>
+          <AssemblyScene equipment={equipment} selectedId={selected.id} explode={explode} showInternals={internals} showConnections={connections} showDimensions={dimensions} isolate={isolate} hiddenIds={hiddenIds} stageIds={stageIds} selectedConnection={selectedConnection} resetKey={resetKey} focusKey={focusKey} cameraView={cameraView} zoomRequest={zoomRequest} pivotRequest={pivotRequest} onSelect={selectPart} onConnectionSelect={selectConnection} onClearFocus={clearCameraFocus} />
+          <div className="absolute right-3 top-3 flex gap-1.5">{(["perspective", "front", "top"] as const).map((view) => <button key={view} type="button" aria-label={`${view} camera view`} aria-pressed={cameraView === view} onClick={() => { setCameraView(view); setResetKey((key) => key + 1); clearCameraFocus(); }} className={`rounded border px-2 py-1.5 text-[10px] capitalize backdrop-blur ${cameraView === view ? "border-teal-400/40 bg-teal-400/10 text-teal-200" : "border-white/10 bg-slate-950/30 text-slate-400 hover:text-white"}`}>{view === "perspective" ? "3D" : view}</button>)}</div>
           <div className="absolute bottom-12 right-3 flex flex-col gap-1.5"><button type="button" aria-label="Zoom in" onClick={() => setZoomRequest((value) => ({ direction: "in", sequence: value.sequence + 1 }))} className={`${darkButton} !bg-slate-950/50 !px-2.5`}><Plus className="h-4 w-4" /></button><button type="button" aria-label="Zoom out" onClick={() => setZoomRequest((value) => ({ direction: "out", sequence: value.sequence + 1 }))} className={`${darkButton} !bg-slate-950/50 !px-2.5`}><Minus className="h-4 w-4" /></button></div>
-          <div className="pointer-events-none absolute bottom-3 left-4 right-4 flex flex-wrap justify-between gap-2 text-[10px] text-slate-400"><span>Drag to orbit · Scroll / pinch to zoom · Right-drag to pan</span><span>{visibleCount} component groups</span></div>
+          <div className="pointer-events-none absolute bottom-3 left-4 right-4 flex flex-wrap justify-between gap-2 text-[10px] text-slate-400"><span>Click part to pivot · Right-click to clear · Right-drag / both buttons / Ctrl-drag to pan</span><span>{visibleCount} component groups</span></div>
         </div>
         <div className="space-y-3 border-t border-white/10 bg-[#112027] p-4">
-          <div className="flex flex-wrap items-center gap-2"><button type="button" className={`${darkButton} ${isolate ? "!border-teal-500/50 !bg-teal-500/10 !text-teal-200" : ""}`} aria-pressed={isolate} onClick={() => { setIsolate(!isolate); setSelectedConnection(null); setHiddenIds((ids) => ids.filter((id) => id !== selected.id)); }}><Maximize2 className={iconsize} />{isolate ? "Return to assembly" : "Isolate part"}</button><button type="button" className={darkButton} onClick={() => setFocusKey((key) => key + 1)}><Focus className={iconsize} /> Focus</button><button type="button" disabled={isolate} className={darkButton} onClick={() => setHiddenIds((ids) => ids.includes(selected.id) ? ids.filter((id) => id !== selected.id) : [...ids, selected.id])}>{hiddenIds.includes(selected.id) ? <Eye className={iconsize} /> : <EyeOff className={iconsize} />}{hiddenIds.includes(selected.id) ? "Show part" : "Hide part"}</button></div>
+          <div className="flex flex-wrap items-center gap-2"><button type="button" className={`${darkButton} ${isolate ? "!border-teal-500/50 !bg-teal-500/10 !text-teal-200" : ""}`} aria-pressed={isolate} onClick={() => { setIsolate(!isolate); setSelectedConnection(null); setHiddenIds((ids) => ids.filter((id) => id !== selected.id)); }}><Maximize2 className={iconsize} />{isolate ? "Return to assembly" : "Isolate part"}</button><button type="button" className={darkButton} onClick={() => { setPivotRequest((request) => ({ kind: "part", partId: selected.id, sequence: request.sequence + 1 })); setFocusKey((key) => key + 1); }}><Focus className={iconsize} /> Focus</button><button type="button" disabled={isolate} className={darkButton} onClick={() => setHiddenIds((ids) => ids.includes(selected.id) ? ids.filter((id) => id !== selected.id) : [...ids, selected.id])}>{hiddenIds.includes(selected.id) ? <Eye className={iconsize} /> : <EyeOff className={iconsize} />}{hiddenIds.includes(selected.id) ? "Show part" : "Hide part"}</button></div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-slate-300"><label className="flex items-center gap-1.5"><input type="checkbox" checked={internals} disabled={isolate} onChange={(event) => setInternals(event.target.checked)} className="accent-teal-400" /> Internal components</label><label className="flex items-center gap-1.5"><input type="checkbox" checked={connections} disabled={isolate} onChange={(event) => setConnections(event.target.checked)} className="accent-teal-400" /> Connections</label><label className="flex items-center gap-1.5"><input type="checkbox" checked={dimensions} onChange={(event) => setDimensions(event.target.checked)} className="accent-teal-400" /> Design dimensions*</label></div>
           <div className="border-t border-white/10 pt-3"><div className="mb-2 flex justify-between gap-2 text-[10px] text-slate-400"><label htmlFor="assembly-explode">Assembly separation</label><output htmlFor="assembly-explode" className="tabular-nums text-teal-200">{Math.round(explode * 100)}%</output></div><div className="flex items-center gap-3"><button type="button" onClick={() => animateExplode(0)} disabled={isolate} className="text-[11px] font-medium text-slate-300 disabled:opacity-40">Assemble</button><input id="assembly-explode" type="range" min="0" max="100" value={Math.round(explode * 100)} disabled={isolate} onChange={(event) => { if (animation.current !== null) cancelAnimationFrame(animation.current); setExplode(Number(event.target.value) / 100); }} className="h-1.5 min-w-0 flex-1 accent-teal-400" /><button type="button" onClick={() => animateExplode(1)} disabled={isolate} className="text-[11px] font-medium text-teal-200 disabled:opacity-40">Explode</button></div></div>
         </div>
@@ -161,6 +170,6 @@ export function AssemblyWorkspace({ equipment = trainingGenerator }: { equipment
         </div>
       </aside>
     </div>
-    <p className="text-[11px] leading-5 text-slate-500" aria-live="polite">{isolate ? `Inspecting ${selected.name} in isolation. Drag to rotate it independently; return to assembly restores its installed design pose.` : `${visibleCount} component groups visible. ${Math.round(explode * 100)}% separation.`} {dimensions ? "* Dimensions describe the illustrative design only." : "Select a component in the model or parts list to inspect it."}</p>
+    <p className="text-[11px] leading-5 text-slate-500" aria-live="polite">{isolate ? `Inspecting ${selected.name} in isolation. Drag to rotate it independently; return to assembly restores its installed design pose.` : `${visibleCount} component groups visible. ${Math.round(explode * 100)}% separation.`} {dimensions ? "* Dimensions describe the illustrative design only." : "Select a component in the model or parts list to inspect it."} {!isolate && (pivotPart ? ` Rotation pivot: ${pivotPart.name}.` : " Rotation pivot: full assembly.")}</p>
   </div>;
 }

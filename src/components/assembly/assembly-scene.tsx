@@ -3,7 +3,7 @@
 import { Component, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Line, OrbitControls } from "@react-three/drei";
-import { Box3, CanvasTexture, CubicBezierCurve3, Group, MathUtils, Sprite, SRGBColorSpace, Vector3 } from "three";
+import { Box3, CanvasTexture, CubicBezierCurve3, Group, MathUtils, PerspectiveCamera, Sprite, SRGBColorSpace, Vector3 } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 
 import type { AssemblyConnection, AssemblyPart, EquipmentPackage, Vector3Tuple } from "@/lib/assembly/training-generator";
@@ -16,7 +16,8 @@ export type SceneProps = {
   selectedConnection: string | null; resetKey: number; focusKey: number;
   cameraView: "perspective" | "front" | "top";
   zoomRequest: { direction: "in" | "out"; sequence: number };
-  onSelect: (id: string) => void; onConnectionSelect: (id: string) => void;
+  pivotRequest: { kind: "part" | "assembly"; partId: string | null; sequence: number };
+  onSelect: (id: string) => void; onConnectionSelect: (id: string) => void; onClearFocus: () => void;
 };
 
 // GPU sprites keep labels readable without creating nested React DOM roots.
@@ -84,28 +85,50 @@ function DimensionGuides({ part }: { part: AssemblyPart }) {
   </group>;
 }
 
-function CameraRig({ model, controls, resetKey, focusKey, isolate, selectedId, stageSignature, cameraView, zoomRequest }: { model: React.RefObject<Group | null>; controls: React.RefObject<OrbitControlsImpl | null>; resetKey: number; focusKey: number; isolate: boolean; selectedId: string; stageSignature: string; cameraView: SceneProps["cameraView"]; zoomRequest: SceneProps["zoomRequest"] }) {
+function CameraRig({ model, controls, resetKey, focusKey, isolate, selectedId, cameraView, zoomRequest, pivotRequest }: { model: React.RefObject<Group | null>; controls: React.RefObject<OrbitControlsImpl | null>; resetKey: number; focusKey: number; isolate: boolean; selectedId: string; cameraView: SceneProps["cameraView"]; zoomRequest: SceneProps["zoomRequest"]; pivotRequest: SceneProps["pivotRequest"] }) {
   const { camera, size, invalidate } = useThree();
   const desired = useRef<{ position: Vector3; target: Vector3 } | null>(null);
-  const lastFocus = useRef(focusKey);
+  const previous = useRef<{ resetKey: number; focusKey: number; isolate: boolean; cameraView: SceneProps["cameraView"]; width: number; height: number; pivotSequence: number } | null>(null);
   useEffect(() => {
-    if (!model.current) return;
+    if (!model.current || !controls.current) return;
     model.current.updateWorldMatrix(true, true);
-    const focusChanged = lastFocus.current !== focusKey;
-    lastFocus.current = focusKey;
-    const targetObject = focusChanged || isolate ? model.current.getObjectByName(`part:${selectedId}`) : model.current;
-    if (!targetObject) return;
-    const bounds = new Box3().setFromObject(targetObject);
-    if (bounds.isEmpty()) return;
-    const center = bounds.getCenter(new Vector3());
-    const radius = Math.max(bounds.getSize(new Vector3()).length() / 2, .06);
-    const distance = radius / Math.sin(MathUtils.degToRad(40 / 2)) * 1.12 * Math.max(1, size.height / size.width);
-    const direction = cameraView === "top" ? new Vector3(.001, 1, .001) : cameraView === "front" ? new Vector3(0, .17, 1) : new Vector3(-1.2, .8, 1.6);
-    desired.current = { position: center.clone().add(direction.normalize().multiplyScalar(distance)), target: center };
-    invalidate();
+    const current = { resetKey, focusKey, isolate, cameraView, width: size.width, height: size.height, pivotSequence: pivotRequest.sequence };
+    const last = previous.current;
+    previous.current = current;
+    const selectedObject = model.current.getObjectByName(`part-geometry:${selectedId}`);
+    const boundsCenter = (target: Group | ReturnType<Group["getObjectByName"]>) => {
+      if (!target) return null;
+      const bounds = new Box3().setFromObject(target);
+      return bounds.isEmpty() ? null : { bounds, center: bounds.getCenter(new Vector3()) };
+    };
+    const fit = (target: Group | ReturnType<Group["getObjectByName"]>) => {
+      const measured = boundsCenter(target);
+      if (!measured) return;
+      const radius = Math.max(measured.bounds.getSize(new Vector3()).length() / 2, .06);
+      const distance = radius / Math.sin(MathUtils.degToRad(40 / 2)) * 1.12 * Math.max(1, size.height / size.width);
+      const direction = cameraView === "top" ? new Vector3(.001, 1, .001) : cameraView === "front" ? new Vector3(0, .17, 1) : new Vector3(-1.2, .8, 1.6);
+      desired.current = { position: measured.center.clone().add(direction.normalize().multiplyScalar(distance)), target: measured.center };
+      invalidate();
+    };
+    const shiftPivot = (target: Group | ReturnType<Group["getObjectByName"]>, useObjectOrigin = false) => {
+      const center = useObjectOrigin && target ? target.getWorldPosition(new Vector3()) : boundsCenter(target)?.center;
+      if (!center) return;
+      const delta = center.clone().sub(controls.current!.target);
+      desired.current = { position: camera.position.clone().add(delta), target: center };
+      invalidate();
+    };
+
+    const frameChanged = !last || last.resetKey !== resetKey || last.cameraView !== cameraView || last.width !== size.width || last.height !== size.height;
+    if (frameChanged) fit(isolate && selectedObject ? selectedObject : model.current);
+    else if (last.isolate !== isolate) fit(isolate && selectedObject ? selectedObject : model.current);
+    else if (last.focusKey !== focusKey && selectedObject) fit(selectedObject);
+    else if (last.pivotSequence !== pivotRequest.sequence) {
+      const requestedPart = pivotRequest.partId ? model.current.getObjectByName(`part-geometry:${pivotRequest.partId}`) : null;
+      shiftPivot(pivotRequest.kind === "part" && requestedPart ? requestedPart : model.current, Boolean(requestedPart && pivotRequest.kind === "part"));
+    }
   // Exploding only moves parts. Keeping it out of these dependencies preserves
   // the technician's current close-up, orbit target, and zoom while parts move.
-  }, [resetKey, focusKey, isolate, selectedId, stageSignature, cameraView, size.width, size.height, camera, controls, invalidate, model]);
+  }, [resetKey, focusKey, isolate, selectedId, cameraView, size.width, size.height, camera, controls, invalidate, model, pivotRequest]);
   useEffect(() => {
     const control = controls.current;
     if (!control) return;
@@ -131,6 +154,91 @@ function CameraRig({ model, controls, resetKey, focusKey, isolate, selectedId, s
   return null;
 }
 
+function MouseNavigation({ controls, onClearFocus }: { controls: React.RefObject<OrbitControlsImpl | null>; onClearFocus: () => void }) {
+  const { camera, gl, size, invalidate } = useThree();
+  useEffect(() => {
+    const element = gl.domElement;
+    const ownerDocument = element.ownerDocument;
+    const orbitControls = controls.current;
+    if (!orbitControls) return;
+    let rightStart: { x: number; y: number } | null = null;
+    let rightDragged = false;
+    let chordActive = false;
+    let previousPoint = { x: 0, y: 0 };
+    let controlsWereEnabled = true;
+
+    const beginChord = (event: PointerEvent) => {
+      if (chordActive) return;
+      chordActive = true;
+      rightDragged = true;
+      previousPoint = { x: event.clientX, y: event.clientY };
+      controlsWereEnabled = orbitControls.enabled;
+      orbitControls.enabled = false;
+    };
+    const pointerDown = (event: PointerEvent) => {
+      if (event.pointerType !== "mouse") return;
+      if (event.button === 2) {
+        rightStart = { x: event.clientX, y: event.clientY };
+        rightDragged = false;
+      }
+      if (event.buttons === 3) beginChord(event);
+    };
+    const pointerMove = (event: PointerEvent) => {
+      if (event.pointerType !== "mouse") return;
+      if (rightStart && Math.hypot(event.clientX - rightStart.x, event.clientY - rightStart.y) > 5) rightDragged = true;
+      if (event.buttons !== 3) return;
+      if (!chordActive) beginChord(event);
+      const dx = event.clientX - previousPoint.x;
+      const dy = event.clientY - previousPoint.y;
+      previousPoint = { x: event.clientX, y: event.clientY };
+      const perspective = camera as PerspectiveCamera;
+      const distance = camera.position.distanceTo(orbitControls.target);
+      const worldPerPixel = 2 * distance * Math.tan(MathUtils.degToRad(perspective.fov / 2)) / Math.max(size.height, 1);
+      const movement = new Vector3(1, 0, 0).applyQuaternion(camera.quaternion).multiplyScalar(-dx * worldPerPixel)
+        .add(new Vector3(0, 1, 0).applyQuaternion(camera.quaternion).multiplyScalar(dy * worldPerPixel));
+      camera.position.add(movement);
+      orbitControls.target.add(movement);
+      orbitControls.update();
+      invalidate();
+      event.preventDefault();
+    };
+    const pointerUp = (event: PointerEvent) => {
+      if (event.pointerType !== "mouse") return;
+      const clear = event.button === 2 && rightStart !== null && !rightDragged && !chordActive;
+      if (event.button === 2) rightStart = null;
+      if (event.buttons === 0) {
+        orbitControls.enabled = controlsWereEnabled;
+        chordActive = false;
+      }
+      if (clear) onClearFocus();
+    };
+    const cancelGesture = () => {
+      rightStart = null;
+      rightDragged = false;
+      chordActive = false;
+      orbitControls.enabled = controlsWereEnabled;
+    };
+    const contextMenu = (event: MouseEvent) => event.preventDefault();
+
+    element.addEventListener("pointerdown", pointerDown, true);
+    ownerDocument.addEventListener("pointermove", pointerMove, true);
+    ownerDocument.addEventListener("pointerup", pointerUp, true);
+    ownerDocument.addEventListener("pointercancel", cancelGesture, true);
+    window.addEventListener("blur", cancelGesture);
+    element.addEventListener("contextmenu", contextMenu);
+    return () => {
+      element.removeEventListener("pointerdown", pointerDown, true);
+      ownerDocument.removeEventListener("pointermove", pointerMove, true);
+      ownerDocument.removeEventListener("pointerup", pointerUp, true);
+      ownerDocument.removeEventListener("pointercancel", cancelGesture, true);
+      window.removeEventListener("blur", cancelGesture);
+      element.removeEventListener("contextmenu", contextMenu);
+      orbitControls.enabled = controlsWereEnabled;
+    };
+  }, [camera, controls, gl, invalidate, onClearFocus, size.height]);
+  return null;
+}
+
 function Model(props: SceneProps) {
   const { equipment, selectedId, explode, showInternals, showConnections, showDimensions, isolate, hiddenIds, stageIds, selectedConnection, onSelect, onConnectionSelect } = props;
   const model = useRef<Group>(null);
@@ -148,8 +256,8 @@ function Model(props: SceneProps) {
       {visibleParts.map((part) => {
         const highlighted = selectedId === part.id || edge?.from === part.id || edge?.to === part.id;
         const ghost = showInternals && !isolate && ["engine", "head", "sump", "alternator", "terminal"].includes(part.id) && !highlighted;
-        return <group key={part.id} name={`part:${part.id}`} position={isolate ? [0, .5, 0] : displayedPosition(part, explode)} onClick={(event) => { event.stopPropagation(); onSelect(part.id); }}>
-          <PartGeometry part={part} selected={highlighted} ghost={ghost} />
+        return <group key={part.id} name={`part:${part.id}`} position={isolate ? [0, .5, 0] : displayedPosition(part, explode)} onClick={(event) => { if (event.nativeEvent.button !== 0 || event.delta > 5) return; event.stopPropagation(); onSelect(part.id); }}>
+          <group name={`part-geometry:${part.id}`}><PartGeometry part={part} selected={highlighted} ghost={ghost} /></group>
           {selectedId === part.id && showDimensions && <DimensionGuides part={part} />}
           {selectedId === part.id && <SceneLabel position={[0, part.size[1] / 2 + .10, 0]} text={part.name} />}
         </group>;
@@ -159,7 +267,8 @@ function Model(props: SceneProps) {
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -.17, 0]} receiveShadow><planeGeometry args={[100, 100]} /><meshStandardMaterial color="#15252b" roughness={1} /></mesh>
     <gridHelper args={[20, 80, "#38525a", "#243b43"]} position={[0, -.165, 0]} />
     <OrbitControls ref={controls} makeDefault minDistance={.12} maxDistance={30} enableDamping dampingFactor={.08} />
-    <CameraRig model={model} controls={controls} {...props} stageSignature={visibleParts.map((part) => part.id).join(",")} selectedId={selected.id} />
+    <MouseNavigation controls={controls} onClearFocus={props.onClearFocus} />
+    <CameraRig model={model} controls={controls} {...props} selectedId={selected.id} />
   </>;
 }
 

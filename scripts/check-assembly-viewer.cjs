@@ -44,6 +44,51 @@ async function main() {
     assert(!beforeWheel.equals(await canvas.screenshot()), "Mouse-wheel zoom must work");
     await page.getByRole("button", { name: "Reset assembly", exact: true }).click();
 
+    const viewport = page.getByRole("region", { name: "Interactive 3D assembly" });
+    await page.locator('[data-part-id="battery"]').click();
+    assert.equal(await viewport.getAttribute("data-camera-pivot"), "battery", "Selecting a component must make it the orbit pivot");
+    await page.waitForTimeout(800);
+    const partPivot = await canvas.screenshot();
+    const navigationArea = await canvas.boundingBox();
+    const navigationPoint = { x: navigationArea.x + navigationArea.width * .48, y: navigationArea.y + navigationArea.height * .42 };
+
+    await page.mouse.move(navigationPoint.x, navigationPoint.y);
+    await page.mouse.down({ button: "right" });
+    await page.mouse.move(navigationPoint.x + 70, navigationPoint.y + 35, { steps: 8 });
+    await page.mouse.up({ button: "right" });
+    await page.waitForTimeout(300);
+    assert.equal(await viewport.getAttribute("data-camera-pivot"), "battery", "Right-drag must pan without clearing the component pivot");
+    assert(!partPivot.equals(await canvas.screenshot()), "Right-drag must change the rendered view");
+
+    const beforeChord = await canvas.screenshot();
+    await page.mouse.move(navigationPoint.x, navigationPoint.y);
+    await page.mouse.down({ button: "left" });
+    await page.mouse.down({ button: "right" });
+    await page.mouse.move(navigationPoint.x - 65, navigationPoint.y + 30, { steps: 8 });
+    await page.mouse.up({ button: "right" });
+    await page.mouse.up({ button: "left" });
+    await page.waitForTimeout(300);
+    assert.equal(await viewport.getAttribute("data-camera-pivot"), "battery", "The two-button pan gesture must not clear the component pivot");
+    assert(!beforeChord.equals(await canvas.screenshot()), "Holding left and right buttons together must pan the view");
+
+    const beforeReverseChord = await canvas.screenshot();
+    await page.mouse.move(navigationPoint.x, navigationPoint.y);
+    await page.mouse.down({ button: "right" });
+    await page.mouse.down({ button: "left" });
+    await page.mouse.move(navigationPoint.x + 55, navigationPoint.y - 35, { steps: 8 });
+    await page.mouse.up({ button: "left" });
+    await page.mouse.up({ button: "right" });
+    await page.waitForTimeout(300);
+    assert.equal(await viewport.getAttribute("data-camera-pivot"), "battery", "The reverse-order two-button pan must not clear the component pivot");
+    assert(!beforeReverseChord.equals(await canvas.screenshot()), "The two-button pan must work regardless of which mouse button is pressed first");
+
+    const beforeClear = await canvas.screenshot();
+    await page.mouse.click(navigationPoint.x, navigationPoint.y, { button: "right" });
+    await page.waitForTimeout(800);
+    assert.equal(await viewport.getAttribute("data-camera-pivot"), "assembly", "A short right-click must return the orbit pivot to the assembly");
+    assert(!beforeClear.equals(await canvas.screenshot()), "Clearing component focus must recenter the rotation pivot");
+    await page.getByRole("button", { name: "Reset assembly", exact: true }).click();
+
     // Enter a close view first. Exploding from here must keep that camera view,
     // allowing a technician to inspect the moving parts without an automatic fit.
     await page.getByRole("button", { name: "Zoom in", exact: true }).click();
@@ -114,7 +159,7 @@ async function main() {
     assert(!beforePinch.equals(await canvas.screenshot()), "Two-finger pinch must zoom on touch devices");
     await page.screenshot({ path: path.join(output, "mobile.png"), fullPage: true });
     assert.equal(errors.length, 0, errors.join("\n"));
-    console.log("PASS: rendering, whole-set and part orbit, +/- buttons, mouse-wheel and touch-pinch zoom, close-view explode/isolate/restore, connection selection, hide/reset, assembly stages, lifecycle, filtering, mobile layout; no browser exceptions or React errors.");
+    console.log("PASS: rendering, component orbit pivot and right-click clear, right-drag and two-button pan, whole-set and part orbit, +/- buttons, mouse-wheel and touch-pinch zoom, close-view explode/isolate/restore, connection selection, hide/reset, assembly stages, lifecycle, filtering, mobile layout; no browser exceptions or React errors.");
   } finally { await browser.close(); }
 }
 main().catch((error) => { console.error(error); process.exitCode = 1; });

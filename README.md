@@ -13,7 +13,7 @@ A professional web system for generator asset operations, inspections, DSE readi
 
 Open **Parts > Explore the 3D Assembly Lab**, or `/parts/assembly`. The browser loads the Three.js viewer only on this page. It uses local, authored geometry and lighting; no remote model/font service is required.
 
-- Drag to orbit, scroll or pinch to zoom, or use the visible + / - buttons. Right-drag pans. Focus and camera presets help inspect small components.
+- Click a component to move the orbit pivot to it without changing zoom. Drag to orbit, scroll or pinch to zoom, or use the visible + / - buttons. A short right-click returns the pivot to the full assembly; right-drag, Ctrl-drag, or holding both mouse buttons pans.
 - Select components in the model or searchable list; isolate one to inspect and rotate it independently. Returning restores its design placement.
 - Use the separation slider or Assemble / Explode buttons without losing the current close-up or zoom. Show internal components, illustrative dimensions, or selectable connection paths.
 - Explore the assembly story, installation/operation planning, component inspection notes and source scopes.
