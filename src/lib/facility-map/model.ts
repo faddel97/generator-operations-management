@@ -12,13 +12,14 @@ export type MapPlace = {
   source: "demo" | "admin" | "pdf";
   reviewRequired?: boolean;
   radiusPx?: number;
+  outline?: MapPoint[];
 };
 export type MapObservation = {
   point: MapPoint;
   at: string;
   source: "simulated" | "gps" | "manual";
 };
-export type MapEvent = { kind: "checkout" | "return" | "refuel" | "fuel" | "movement"; at: string; detail: string };
+export type MapEvent = { kind: "checkout" | "return" | "refuel" | "fuel" | "movement" | "incident"; at: string; detail: string };
 export type MapAsset = {
   id: string;
   name: string;

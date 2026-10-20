@@ -1,40 +1,23 @@
 import type { MapAsset, MapEvent, MapObservation, MapPlace, MapPoint } from "./model";
+import { demoBuildings, demoGraphRoute, overviewPoint, vectorRoads } from "./vector";
 
-// Coordinates are traced against the complete PDF render, using its 1800 px
-// overview for authoring. They are fictional demonstration placements and are
+// Coordinates are traced from the supplied clean overhead, normalized to the
+// 1800 × 1260 annotated preview frame. They are fictional demo placements and
 // deliberately separate from operational asset and location records.
-const px = (x: number, y: number): MapPoint => ({ x: x * 6429 / 1800, y: y * 4500 / 1260 });
+const px = overviewPoint;
 const baseTime = Date.parse("2026-10-20T06:00:00.000Z");
 const when = (minutes: number) => new Date(baseTime + minutes * 60_000).toISOString();
 
-const facilityAnchors: Array<[number, number, string]> = [
-  [243, 183, "U211 utility compound"], [344, 146, "SEC substation"],
-  [463, 196, "North support campus"], [555, 195, "North operations campus"],
-  [701, 195, "Central support campus"], [835, 197, "East support campus"],
-  [338, 307, "West factory area"], [515, 303, "West workshop area"],
-  [665, 308, "Central workshop area"], [810, 307, "Central production area"],
-  [955, 306, "East workshop area"], [1114, 305, "East production area"],
-  [1322, 307, "East storage area"], [1435, 320, "Coastal support area"],
-  [318, 510, "D1 block"], [548, 515, "D2 block"],
-  [726, 512, "Central fabrication area"], [870, 526, "Central berth area"],
-  [1030, 514, "Marine workshop area"], [1170, 514, "Eastern operations area"],
-  [1300, 492, "East equipment area"], [1430, 490, "Quayside support area"],
-  [778, 580, "South central yard"], [1140, 585, "South east yard"],
-  [1374, 570, "Marine services area"],
-];
-
-export const demoPlaces: MapPlace[] = facilityAnchors.map(([x, y, name], i) => ({
-  id: `DEMO-LOC-${String(i + 1).padStart(2, "0")}`,
-  code: i === 14 ? "D1" : i === 15 ? "D2" : `DEMO-LOC-${String(i + 1).padStart(2, "0")}`,
-  name: String(name), kind: i === 14 || i === 15 ? "area" : "building",
-  point: px(Number(x), Number(y)), source: "demo", reviewRequired: true,
+export const demoPlaces: MapPlace[] = demoBuildings.map((building) => ({
+  id: building.id, code: building.code, name: building.name, kind: building.kind,
+  point: building.point, outline: building.outline, source: "demo", reviewRequired: true,
 }));
 
 const parkingAnchors: Array<[number, number]> = [
-  [220, 405], [250, 405], [280, 405], [310, 405], [340, 405],
-  [370, 405], [400, 405], [430, 405], [485, 433], [515, 433],
-  [545, 433], [575, 433], [610, 433], [650, 411], [697, 411],
-  [746, 411], [814, 412], [902, 411], [1020, 411], [1160, 410],
+  [224, 377], [255, 377], [286, 377], [317, 377], [350, 377],
+  [390, 377], [430, 377], [470, 377], [548, 377], [620, 377],
+  [694, 377], [790, 377], [868, 377], [940, 377], [1020, 377],
+  [1110, 377], [1190, 377], [1270, 377], [1360, 377], [1450, 377],
 ];
 export const demoParking: MapPlace[] = parkingAnchors.map(([x, y], i) => ({
   id: `DEMO-PARK-${String(i + 1).padStart(2, "0")}`,
@@ -47,13 +30,7 @@ export const demoOperators = Array.from({ length: 18 }, (_, i) =>
   `Demo Operator ${String(i + 1).padStart(2, "0")}`);
 
 export type DemoRoad = { id: string; points: MapPoint[]; status: "illustrative" };
-export const demoRoads: DemoRoad[] = [
-  { id: "north-road", points: [[354, 251], [520, 252], [704, 251], [904, 251], [1131, 251], [1428, 252]].map(([x, y]) => px(x, y)), status: "illustrative" },
-  { id: "central-road", points: [[190, 389], [350, 389], [492, 390], [645, 391], [814, 393], [1009, 392], [1190, 392], [1452, 393]].map(([x, y]) => px(x, y)), status: "illustrative" },
-  { id: "west-link", points: [[353, 251], [354, 320], [350, 389], [350, 555], [435, 620]].map(([x, y]) => px(x, y)), status: "illustrative" },
-  { id: "central-link", points: [[645, 251], [645, 318], [645, 391], [645, 505], [645, 620]].map(([x, y]) => px(x, y)), status: "illustrative" },
-  { id: "east-link", points: [[1009, 251], [1009, 318], [1009, 392], [1009, 512], [1009, 618]].map(([x, y]) => px(x, y)), status: "illustrative" },
-];
+export const demoRoads: DemoRoad[] = vectorRoads.map((road) => ({ id: road.id, points: road.points, status: "illustrative" }));
 
 const categories = ["generator", "forklift", "crane", "utility vehicle", "transport vehicle", "mobile machinery"];
 const capacities: Record<string, number> = { generator: 600, forklift: 80, crane: 420, "utility vehicle": 90, "transport vehicle": 180, "mobile machinery": 250 };
@@ -127,6 +104,7 @@ export function initialDemoAssets(): MapAsset[] {
     if (asset.checkoutAt) events.push({ kind: "checkout", at: asset.checkoutAt, detail: `${asset.lastOperator ?? "Demo operator"} checked out equipment` });
     if (asset.lastRefuelAt) events.push({ kind: "refuel", at: asset.lastRefuelAt, detail: "Fictional refueling event" });
     if (asset.fuelAt) events.push({ kind: "fuel", at: asset.fuelAt, detail: `${Math.round(asset.fuelPercent ?? 0)}% simulated fuel reading` });
+    if (asset.id === "DEMO-FLK-001") events.push({ kind: "incident", at: when(-65), detail: "Fictional near-miss review at a demo road junction" });
     if (asset.positionAt) events.push({ kind: "movement", at: asset.positionAt, detail: "Simulated position observation" });
     if (asset.returnStatus === "returned" && asset.mobile) events.push({ kind: "return", at: when(-30), detail: "Fictional return to assigned area" });
     return { ...asset, events: events.sort((a, b) => Date.parse(b.at) - Date.parse(a.at)) };
@@ -134,9 +112,9 @@ export function initialDemoAssets(): MapAsset[] {
   return [...mobile, ...fixed].map(withEvents);
 }
 
-const outward = [demoParking[1].point, ...demoRoads[1].points.slice(1, 6)];
+const outward = [demoParking[1].point, ...(demoGraphRoute(demoParking[1].point, px(1270, 390))?.points ?? [])];
 const movingPath = [...outward, outward[outward.length - 1], outward[outward.length - 1], ...outward.slice(0, -1).reverse()];
-const returnPath = [demoRoads[1].points[3], demoRoads[1].points[2], demoParking[8].point];
+const returnPath = [...(demoGraphRoute(px(940, 390), demoParking[8].point)?.points ?? []), demoParking[8].point];
 
 function interpolate(points: MapPoint[], progress: number): MapPoint {
   const position = Math.min(points.length - 1.000001, Math.max(0, progress * (points.length - 1)));
