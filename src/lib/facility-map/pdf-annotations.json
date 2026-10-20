@@ -1,0 +1,1354 @@
+[
+  {
+    "code": "961--B103-GMS-301",
+    "annotationBoxes": [
+      {
+        "x": 4331.5,
+        "y": 2207.5
+      }
+    ]
+  },
+  {
+    "code": "961-A000-SMS2-005",
+    "annotationBoxes": [
+      {
+        "x": 5382.03,
+        "y": 2951.88
+      }
+    ]
+  },
+  {
+    "code": "961-A000-SMSI-303",
+    "annotationBoxes": [
+      {
+        "x": 5577.47,
+        "y": 1975.86
+      }
+    ]
+  },
+  {
+    "code": "961-A000-SPM-313",
+    "annotationBoxes": [
+      {
+        "x": 5574.49,
+        "y": 2084.5
+      }
+    ]
+  },
+  {
+    "code": "961-A000-SPMS-306",
+    "annotationBoxes": [
+      {
+        "x": 4318.09,
+        "y": 2325.87
+      }
+    ]
+  },
+  {
+    "code": "961-A000-SPMS-307",
+    "annotationBoxes": [
+      {
+        "x": 4469.62,
+        "y": 1744.15
+      }
+    ]
+  },
+  {
+    "code": "961-A000-SPMS-308",
+    "annotationBoxes": [
+      {
+        "x": 4483.05,
+        "y": 1929.71
+      }
+    ]
+  },
+  {
+    "code": "961-A000-SPMS-309",
+    "annotationBoxes": [
+      {
+        "x": 4858.1,
+        "y": 2041.53
+      }
+    ]
+  },
+  {
+    "code": "961-A000-SPMS-310",
+    "annotationBoxes": [
+      {
+        "x": 4872.18,
+        "y": 2280.99
+      }
+    ]
+  },
+  {
+    "code": "961-A000-SPMS-311",
+    "annotationBoxes": [
+      {
+        "x": 5068.98,
+        "y": 1902.8
+      }
+    ]
+  },
+  {
+    "code": "961-A000-SPMS-312",
+    "annotationBoxes": [
+      {
+        "x": 5300.82,
+        "y": 1776.27
+      }
+    ]
+  },
+  {
+    "code": "961-A101-GMS-301",
+    "annotationBoxes": [
+      {
+        "x": 4838.28,
+        "y": 2183.0
+      }
+    ]
+  },
+  {
+    "code": "961-A101-GMS-302",
+    "annotationBoxes": [
+      {
+        "x": 4761.97,
+        "y": 1861.62
+      }
+    ]
+  },
+  {
+    "code": "961-A101-GMS-303",
+    "annotationBoxes": [
+      {
+        "x": 4855.7,
+        "y": 2117.24
+      }
+    ]
+  },
+  {
+    "code": "961-A104-GMS-301",
+    "annotationBoxes": [
+      {
+        "x": 5301.61,
+        "y": 1815.69
+      }
+    ]
+  },
+  {
+    "code": "961-A105-GMS-301",
+    "annotationBoxes": [
+      {
+        "x": 4874.29,
+        "y": 2222.44
+      }
+    ]
+  },
+  {
+    "code": "961-A106-GMS-301",
+    "annotationBoxes": [
+      {
+        "x": 5343.01,
+        "y": 2152.47
+      }
+    ]
+  },
+  {
+    "code": "961-A107-GMS-301",
+    "annotationBoxes": [
+      {
+        "x": 4854.21,
+        "y": 1993.71
+      }
+    ]
+  },
+  {
+    "code": "961-A112-GMS-301",
+    "annotationBoxes": [
+      {
+        "x": 5597.0,
+        "y": 1844.76
+      }
+    ]
+  },
+  {
+    "code": "961-A120-GMS-301",
+    "annotationBoxes": [
+      {
+        "x": 4469.37,
+        "y": 1696.6
+      },
+      {
+        "x": 4843.08,
+        "y": 1756.73
+      }
+    ]
+  },
+  {
+    "code": "961-A201-IMS-301",
+    "annotationBoxes": [
+      {
+        "x": 4909.79,
+        "y": 1474.47
+      }
+    ]
+  },
+  {
+    "code": "961-A203-IMS-300",
+    "annotationBoxes": [
+      {
+        "x": 5175.33,
+        "y": 1616.63
+      }
+    ]
+  },
+  {
+    "code": "961-A203-IMS-301",
+    "annotationBoxes": [
+      {
+        "x": 4921.65,
+        "y": 1616.86
+      }
+    ]
+  },
+  {
+    "code": "961-A204-IMS-300",
+    "annotationBoxes": [
+      {
+        "x": 4866.47,
+        "y": 1603.79
+      }
+    ]
+  },
+  {
+    "code": "961-A204-IMS-301",
+    "annotationBoxes": [
+      {
+        "x": 4725.05,
+        "y": 1479.5
+      }
+    ]
+  },
+  {
+    "code": "961-B105-GMS-301",
+    "annotationBoxes": [
+      {
+        "x": 4019.67,
+        "y": 2332.69
+      }
+    ]
+  },
+  {
+    "code": "961-G202-GMS-301",
+    "annotationBoxes": [
+      {
+        "x": 5574.12,
+        "y": 2239.4
+      }
+    ]
+  },
+  {
+    "code": "962--B122-GMS-302",
+    "annotationBoxes": [
+      {
+        "x": 4445.6,
+        "y": 1900.4
+      }
+    ]
+  },
+  {
+    "code": "962-B102-GMS-301",
+    "annotationBoxes": [
+      {
+        "x": 4031.85,
+        "y": 1748.85
+      }
+    ]
+  },
+  {
+    "code": "962-B102-GMS-302",
+    "annotationBoxes": [
+      {
+        "x": 4016.29,
+        "y": 1929.41
+      }
+    ]
+  },
+  {
+    "code": "962-B102-GMS-303",
+    "annotationBoxes": [
+      {
+        "x": 3998.4,
+        "y": 2158.33
+      }
+    ]
+  },
+  {
+    "code": "962-B122-GMS-303",
+    "annotationBoxes": [
+      {
+        "x": 4162.5,
+        "y": 1596.75
+      }
+    ]
+  },
+  {
+    "code": "962-B122-GMS-304",
+    "annotationBoxes": [
+      {
+        "x": 4241.19,
+        "y": 2053.66
+      }
+    ]
+  },
+  {
+    "code": "962-B205-GMS-301",
+    "annotationBoxes": [
+      {
+        "x": 4130.52,
+        "y": 1673.08
+      }
+    ]
+  },
+  {
+    "code": "963-C000-GMS-315",
+    "annotationBoxes": [
+      {
+        "x": 3860.81,
+        "y": 1195.29
+      }
+    ]
+  },
+  {
+    "code": "963-C000-SMS1-301",
+    "annotationBoxes": [
+      {
+        "x": 2394.5,
+        "y": 862.25
+      }
+    ]
+  },
+  {
+    "code": "963-C000-SMS1-302",
+    "annotationBoxes": [
+      {
+        "x": 4392.63,
+        "y": 861.0
+      }
+    ]
+  },
+  {
+    "code": "963-C000-SMS1-303",
+    "annotationBoxes": [
+      {
+        "x": 3476.0,
+        "y": 906.0
+      }
+    ]
+  },
+  {
+    "code": "963-C000-SMS1-304",
+    "annotationBoxes": [
+      {
+        "x": 2385.38,
+        "y": 473.42
+      }
+    ]
+  },
+  {
+    "code": "963-C000-SMS1-306",
+    "annotationBoxes": [
+      {
+        "x": 4294.5,
+        "y": 479.25
+      }
+    ]
+  },
+  {
+    "code": "963-C000-SMS2-305",
+    "annotationBoxes": [
+      {
+        "x": 1853.05,
+        "y": 481.0
+      }
+    ]
+  },
+  {
+    "code": "963-C000-SPMS-307",
+    "annotationBoxes": [
+      {
+        "x": 2827.12,
+        "y": 1936.72
+      }
+    ]
+  },
+  {
+    "code": "963-C000-SPMS-308",
+    "annotationBoxes": [
+      {
+        "x": 2868.75,
+        "y": 1886.28
+      }
+    ]
+  },
+  {
+    "code": "963-C000-SPMS-309",
+    "annotationBoxes": [
+      {
+        "x": 2977.25,
+        "y": 1760.3
+      }
+    ]
+  },
+  {
+    "code": "963-C000-SPMS-310",
+    "annotationBoxes": [
+      {
+        "x": 3110.25,
+        "y": 2015.25
+      }
+    ]
+  },
+  {
+    "code": "963-C000-SPMS-312",
+    "annotationBoxes": [
+      {
+        "x": 3474.78,
+        "y": 2290.25
+      }
+    ]
+  },
+  {
+    "code": "963-C000-SPMS-313",
+    "annotationBoxes": [
+      {
+        "x": 3474.84,
+        "y": 2251.0
+      }
+    ]
+  },
+  {
+    "code": "963-C000-SPMS-314",
+    "annotationBoxes": [
+      {
+        "x": 3535.72,
+        "y": 2290.75
+      }
+    ]
+  },
+  {
+    "code": "963-C101-GMS-301",
+    "annotationBoxes": [
+      {
+        "x": 3792.18,
+        "y": 1673.07
+      }
+    ]
+  },
+  {
+    "code": "963-C101-GMS-302",
+    "annotationBoxes": [
+      {
+        "x": 3904.25,
+        "y": 1917.5
+      }
+    ]
+  },
+  {
+    "code": "963-C101-GMS-303",
+    "annotationBoxes": [
+      {
+        "x": 3713.31,
+        "y": 2351.62
+      }
+    ]
+  },
+  {
+    "code": "963-C101-GMS-304",
+    "annotationBoxes": [
+      {
+        "x": 3576.18,
+        "y": 1782.19
+      }
+    ]
+  },
+  {
+    "code": "963-C101-GMS-305",
+    "annotationBoxes": [
+      {
+        "x": 3480.79,
+        "y": 2334.5
+      }
+    ]
+  },
+  {
+    "code": "963-C102-GMS-301",
+    "annotationBoxes": [
+      {
+        "x": 3515.25,
+        "y": 1841.71
+      }
+    ]
+  },
+  {
+    "code": "963-C102-GMS-302",
+    "annotationBoxes": [
+      {
+        "x": 3383.25,
+        "y": 1939.25
+      }
+    ]
+  },
+  {
+    "code": "963-C102-GMS-303",
+    "annotationBoxes": [
+      {
+        "x": 3124.05,
+        "y": 2311.38
+      }
+    ]
+  },
+  {
+    "code": "963-C107-GMS-301",
+    "annotationBoxes": [
+      {
+        "x": 2385.93,
+        "y": 2364.28
+      },
+      {
+        "x": 2823.32,
+        "y": 2185.69
+      }
+    ]
+  },
+  {
+    "code": "963-C108-GMS-301",
+    "annotationBoxes": [
+      {
+        "x": 3113.75,
+        "y": 1936.03
+      },
+      {
+        "x": 3026.52,
+        "y": 2294.68
+      },
+      {
+        "x": 3176.55,
+        "y": 2307.62
+      }
+    ]
+  },
+  {
+    "code": "963-C108-GMS-302",
+    "annotationBoxes": [
+      {
+        "x": 3027.14,
+        "y": 2238.01
+      }
+    ]
+  },
+  {
+    "code": "963-C119-GMS-301",
+    "annotationBoxes": [
+      {
+        "x": 3061.91,
+        "y": 1801.11
+      }
+    ]
+  },
+  {
+    "code": "963-C119-GMS-302",
+    "annotationBoxes": [
+      {
+        "x": 2858.5,
+        "y": 2270.35
+      }
+    ]
+  },
+  {
+    "code": "963-C201-GMS-303",
+    "annotationBoxes": [
+      {
+        "x": 2178.06,
+        "y": 1182.32
+      }
+    ]
+  },
+  {
+    "code": "963-C201-IMS-300",
+    "annotationBoxes": [
+      {
+        "x": 2453.5,
+        "y": 1463.32
+      }
+    ]
+  },
+  {
+    "code": "963-C201-IMS-301",
+    "annotationBoxes": [
+      {
+        "x": 2499.0,
+        "y": 1640.31
+      }
+    ]
+  },
+  {
+    "code": "963-C201-IMS-302",
+    "annotationBoxes": [
+      {
+        "x": 2661.75,
+        "y": 1743.73
+      }
+    ]
+  },
+  {
+    "code": "963-C201-IMS-304",
+    "annotationBoxes": [
+      {
+        "x": 2170.84,
+        "y": 1273.8
+      }
+    ]
+  },
+  {
+    "code": "963-C201-IMS-305",
+    "annotationBoxes": [
+      {
+        "x": 2175.25,
+        "y": 1363.0
+      }
+    ]
+  },
+  {
+    "code": "963-C201-IMS-306",
+    "annotationBoxes": [
+      {
+        "x": 2610.8,
+        "y": 1851.0
+      }
+    ]
+  },
+  {
+    "code": "963-C201-IMS-307",
+    "annotationBoxes": [
+      {
+        "x": 2390.0,
+        "y": 1858.0
+      }
+    ]
+  },
+  {
+    "code": "963-C201-IMS-308",
+    "annotationBoxes": [
+      {
+        "x": 2463.5,
+        "y": 1553.58
+      }
+    ]
+  },
+  {
+    "code": "963-C202-GMS-300",
+    "annotationBoxes": [
+      {
+        "x": 2383.01,
+        "y": 858.33
+      }
+    ]
+  },
+  {
+    "code": "963-C202-GMS-301",
+    "annotationBoxes": [
+      {
+        "x": 2370.86,
+        "y": 1004.43
+      }
+    ]
+  },
+  {
+    "code": "963-C202-GMS-302",
+    "annotationBoxes": [
+      {
+        "x": 2450.03,
+        "y": 882.63
+      }
+    ]
+  },
+  {
+    "code": "963-C202-GMS-303",
+    "annotationBoxes": [
+      {
+        "x": 2466.53,
+        "y": 854.97
+      }
+    ]
+  },
+  {
+    "code": "963-C202-GMS-304",
+    "annotationBoxes": [
+      {
+        "x": 2656.44,
+        "y": 955.8
+      }
+    ]
+  },
+  {
+    "code": "963-C202-GMS-305",
+    "annotationBoxes": [
+      {
+        "x": 2676.02,
+        "y": 936.3
+      }
+    ]
+  },
+  {
+    "code": "963-C203-IMS-300",
+    "annotationBoxes": [
+      {
+        "x": 2665.5,
+        "y": 1528.36
+      }
+    ]
+  },
+  {
+    "code": "963-C203-IMS-301",
+    "annotationBoxes": [
+      {
+        "x": 2642.7,
+        "y": 1668.76
+      }
+    ]
+  },
+  {
+    "code": "963-C203-IMS-302",
+    "annotationBoxes": [
+      {
+        "x": 2862.9,
+        "y": 1525.32
+      }
+    ]
+  },
+  {
+    "code": "963-C203-IMS-303",
+    "annotationBoxes": [
+      {
+        "x": 2834.7,
+        "y": 1668.68
+      }
+    ]
+  },
+  {
+    "code": "963-C203-IMS-304",
+    "annotationBoxes": [
+      {
+        "x": 3054.9,
+        "y": 1531.06
+      }
+    ]
+  },
+  {
+    "code": "963-C203-IMS-305",
+    "annotationBoxes": [
+      {
+        "x": 3024.3,
+        "y": 1658.06
+      }
+    ]
+  },
+  {
+    "code": "963-C204-IMS-300",
+    "annotationBoxes": [
+      {
+        "x": 2934.35,
+        "y": 975.25
+      }
+    ]
+  },
+  {
+    "code": "963-C204-IMS-301",
+    "annotationBoxes": [
+      {
+        "x": 2946.77,
+        "y": 884.5
+      }
+    ]
+  },
+  {
+    "code": "963-C205-IMS-300",
+    "annotationBoxes": [
+      {
+        "x": 3326.76,
+        "y": 858.0
+      }
+    ]
+  },
+  {
+    "code": "963-C205-IMS-301",
+    "annotationBoxes": [
+      {
+        "x": 3327.26,
+        "y": 951.0
+      }
+    ]
+  },
+  {
+    "code": "963-C207-GMS-301",
+    "annotationBoxes": [
+      {
+        "x": 2847.7,
+        "y": 1408.85
+      }
+    ]
+  },
+  {
+    "code": "963-C208-GMS-301",
+    "annotationBoxes": [
+      {
+        "x": 3170.62,
+        "y": 975.0
+      }
+    ]
+  },
+  {
+    "code": "963-C208-GMS-305",
+    "annotationBoxes": [
+      {
+        "x": 2952.76,
+        "y": 1234.68
+      }
+    ]
+  },
+  {
+    "code": "963-C208-GMS-306",
+    "annotationBoxes": [
+      {
+        "x": 2951.36,
+        "y": 1275.18
+      }
+    ]
+  },
+  {
+    "code": "963-C208-IMS-302",
+    "annotationBoxes": [
+      {
+        "x": 3062.25,
+        "y": 932.62
+      }
+    ]
+  },
+  {
+    "code": "963-C208-IMS-303",
+    "annotationBoxes": [
+      {
+        "x": 3294.78,
+        "y": 1004.1
+      }
+    ]
+  },
+  {
+    "code": "963-C208-IMS-304",
+    "annotationBoxes": [
+      {
+        "x": 3279.57,
+        "y": 1239.75
+      }
+    ]
+  },
+  {
+    "code": "963-C208-IMS-307",
+    "annotationBoxes": [
+      {
+        "x": 3280.3,
+        "y": 1288.12
+      }
+    ]
+  },
+  {
+    "code": "963-C208-IMS-308",
+    "annotationBoxes": [
+      {
+        "x": 3273.7,
+        "y": 1322.43
+      }
+    ]
+  },
+  {
+    "code": "963-C209-IMS-301",
+    "annotationBoxes": [
+      {
+        "x": 3062.86,
+        "y": 837.0
+      }
+    ]
+  },
+  {
+    "code": "963-C209-IMS-302",
+    "annotationBoxes": [
+      {
+        "x": 3065.03,
+        "y": 934.88
+      }
+    ]
+  },
+  {
+    "code": "963-C301-GMS-302",
+    "annotationBoxes": [
+      {
+        "x": 2518.59,
+        "y": 1370.77
+      }
+    ]
+  },
+  {
+    "code": "963-C306-GMS-301",
+    "annotationBoxes": [
+      {
+        "x": 3251.4,
+        "y": 1580.1
+      }
+    ]
+  },
+  {
+    "code": "963-C306-GMS-303",
+    "annotationBoxes": [
+      {
+        "x": 3491.06,
+        "y": 1368.0
+      }
+    ]
+  },
+  {
+    "code": "963-C306-GMS-304",
+    "annotationBoxes": [
+      {
+        "x": 3281.7,
+        "y": 1676.32
+      }
+    ]
+  },
+  {
+    "code": "963-C310-SMS1-301",
+    "annotationBoxes": [
+      {
+        "x": 3443.0,
+        "y": 885.0
+      }
+    ]
+  },
+  {
+    "code": "963-C410-GMS-301",
+    "annotationBoxes": [
+      {
+        "x": 2397.38,
+        "y": 1290.86
+      },
+      {
+        "x": 2633.38,
+        "y": 1288.76
+      }
+    ]
+  },
+  {
+    "code": "963-C501-GMS-301",
+    "annotationBoxes": [
+      {
+        "x": 3893.82,
+        "y": 1487.81
+      }
+    ]
+  },
+  {
+    "code": "963-C501-GMS-302",
+    "annotationBoxes": [
+      {
+        "x": 3581.06,
+        "y": 1588.5
+      }
+    ]
+  },
+  {
+    "code": "963-C501-GMS-303",
+    "annotationBoxes": [
+      {
+        "x": 3407.81,
+        "y": 1657.13
+      }
+    ]
+  },
+  {
+    "code": "963-C505-GMS-301",
+    "annotationBoxes": [
+      {
+        "x": 3877.49,
+        "y": 1014.57
+      }
+    ]
+  },
+  {
+    "code": "964-D000-GMS-301",
+    "annotationBoxes": [
+      {
+        "x": 1537.88,
+        "y": 1778.97
+      }
+    ]
+  },
+  {
+    "code": "964-D000-GMS-302",
+    "annotationBoxes": [
+      {
+        "x": 1643.76,
+        "y": 2196.09
+      }
+    ]
+  },
+  {
+    "code": "964-D000-GMS-303",
+    "annotationBoxes": [
+      {
+        "x": 1641.23,
+        "y": 2280.39
+      }
+    ]
+  },
+  {
+    "code": "964-D000-GMS-304",
+    "annotationBoxes": [
+      {
+        "x": 1644.24,
+        "y": 2323.59
+      }
+    ]
+  },
+  {
+    "code": "964-D000-GMS-305",
+    "annotationBoxes": [
+      {
+        "x": 2128.4,
+        "y": 2467.83
+      }
+    ]
+  },
+  {
+    "code": "964-D000-GMS-306",
+    "annotationBoxes": [
+      {
+        "x": 2051.93,
+        "y": 2284.83
+      }
+    ]
+  },
+  {
+    "code": "964-D000-GMS-307",
+    "annotationBoxes": [
+      {
+        "x": 1874.56,
+        "y": 1842.93
+      }
+    ]
+  },
+  {
+    "code": "964-D000-GMS-308",
+    "annotationBoxes": [
+      {
+        "x": 1645.17,
+        "y": 2058.18
+      }
+    ]
+  },
+  {
+    "code": "964-D000-GMS-309",
+    "annotationBoxes": [
+      {
+        "x": 2054.03,
+        "y": 2321.79
+      }
+    ]
+  },
+  {
+    "code": "964-D000-SPMS-310",
+    "annotationBoxes": [
+      {
+        "x": 1982.03,
+        "y": 2353.83
+      }
+    ]
+  },
+  {
+    "code": "964-D000-SPMS-311",
+    "annotationBoxes": [
+      {
+        "x": 1704.8,
+        "y": 2310.93
+      }
+    ]
+  },
+  {
+    "code": "964-D000-SPMS-312",
+    "annotationBoxes": [
+      {
+        "x": 2045.34,
+        "y": 2228.79
+      }
+    ]
+  },
+  {
+    "code": "964-D000-SPMS-313",
+    "annotationBoxes": [
+      {
+        "x": 1693.74,
+        "y": 2378.49
+      }
+    ]
+  },
+  {
+    "code": "964-D201-IMS-301",
+    "annotationBoxes": [
+      {
+        "x": 1580.04,
+        "y": 1246.53
+      }
+    ]
+  },
+  {
+    "code": "964-D203-GMS-301",
+    "annotationBoxes": [
+      {
+        "x": 1607.46,
+        "y": 1871.43
+      }
+    ]
+  },
+  {
+    "code": "964-D204-GMS-300",
+    "annotationBoxes": [
+      {
+        "x": 2030.63,
+        "y": 1485.03
+      }
+    ]
+  },
+  {
+    "code": "964-D204-IMS-301",
+    "annotationBoxes": [
+      {
+        "x": 2030.4,
+        "y": 1614.3
+      }
+    ]
+  },
+  {
+    "code": "964-D204-IMS-302",
+    "annotationBoxes": [
+      {
+        "x": 1506.24,
+        "y": 1385.7
+      }
+    ]
+  },
+  {
+    "code": "964-D204-IMS-303",
+    "annotationBoxes": [
+      {
+        "x": 1547.93,
+        "y": 1661.79
+      }
+    ]
+  },
+  {
+    "code": "964-D301-GMS-301",
+    "annotationBoxes": [
+      {
+        "x": 1722.68,
+        "y": 1794.18
+      }
+    ]
+  },
+  {
+    "code": "964-D304-GMS-301",
+    "annotationBoxes": [
+      {
+        "x": 1722.31,
+        "y": 1825.68
+      }
+    ]
+  },
+  {
+    "code": "964-D304-GMS-302",
+    "annotationBoxes": [
+      {
+        "x": 1799.63,
+        "y": 2095.23
+      }
+    ]
+  },
+  {
+    "code": "964-D310-GMS-301",
+    "annotationBoxes": [
+      {
+        "x": 1564.43,
+        "y": 1239.94
+      }
+    ]
+  },
+  {
+    "code": "964-D310-GMS-302",
+    "annotationBoxes": [
+      {
+        "x": 2027.93,
+        "y": 1236.93
+      }
+    ]
+  },
+  {
+    "code": "964-D403-GMS-301",
+    "annotationBoxes": [
+      {
+        "x": 1814.56,
+        "y": 1965.56
+      }
+    ]
+  },
+  {
+    "code": "964-D403-GMS-302",
+    "annotationBoxes": [
+      {
+        "x": 1845.31,
+        "y": 1985.81
+      }
+    ]
+  },
+  {
+    "code": "964-D404-GMS-301",
+    "annotationBoxes": [
+      {
+        "x": 2122.31,
+        "y": 2266.53
+      }
+    ]
+  },
+  {
+    "code": "964-T000-GMS-301",
+    "annotationBoxes": [
+      {
+        "x": 1466.55,
+        "y": 1550.8
+      }
+    ]
+  },
+  {
+    "code": "964-T000-GMS-302",
+    "annotationBoxes": [
+      {
+        "x": 1422.19,
+        "y": 1532.53
+      }
+    ]
+  },
+  {
+    "code": "964-T000-GMS-303",
+    "annotationBoxes": [
+      {
+        "x": 1501.62,
+        "y": 1569.92
+      }
+    ]
+  },
+  {
+    "code": "964-T000-GMS-304",
+    "annotationBoxes": [
+      {
+        "x": 1438.24,
+        "y": 1826.37
+      }
+    ]
+  },
+  {
+    "code": "964-T000-GMS-305",
+    "annotationBoxes": [
+      {
+        "x": 1542.5,
+        "y": 1934.05
+      }
+    ]
+  },
+  {
+    "code": "964-T000-GMS-306",
+    "annotationBoxes": [
+      {
+        "x": 1371.49,
+        "y": 1865.25
+      }
+    ]
+  },
+  {
+    "code": "964-T000-GMS-307",
+    "annotationBoxes": [
+      {
+        "x": 1321.69,
+        "y": 1533.51
+      }
+    ]
+  },
+  {
+    "code": "964-T000-GMS-308",
+    "annotationBoxes": [
+      {
+        "x": 1088.9,
+        "y": 1445.89
+      }
+    ]
+  },
+  {
+    "code": "964-T000-GMS-309",
+    "annotationBoxes": [
+      {
+        "x": 1359.49,
+        "y": 1885.7
+      }
+    ]
+  },
+  {
+    "code": "964-T000-SMS1-315",
+    "annotationBoxes": [
+      {
+        "x": 1448.74,
+        "y": 1274.42
+      }
+    ]
+  },
+  {
+    "code": "964-T000-SMS1-316",
+    "annotationBoxes": [
+      {
+        "x": 582.0,
+        "y": 1407.91
+      }
+    ]
+  },
+  {
+    "code": "964-T000-SMS1-317",
+    "annotationBoxes": [
+      {
+        "x": 656.4,
+        "y": 711.25
+      }
+    ]
+  },
+  {
+    "code": "964-T000-SMS1-318",
+    "annotationBoxes": [
+      {
+        "x": 838.42,
+        "y": 3055.65
+      }
+    ]
+  },
+  {
+    "code": "964-T000-SMS1-319",
+    "annotationBoxes": [
+      {
+        "x": 790.5,
+        "y": 2236.5
+      }
+    ]
+  }
+]

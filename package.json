@@ -13,7 +13,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test:tracking": "node --test scripts/check-tracking-core.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",
@@ -21,7 +22,9 @@
     "@supabase/ssr": "0.12.0",
     "@supabase/supabase-js": "2.110.0",
     "@xlsx/xlsx-populate": "^0.2.2",
+    "leaflet": "^1.9.4",
     "lucide-react": "1.23.0",
+    "maplibre-gl": "^6.15.0",
     "next": "16.2.12",
     "pdfkit": "0.17.2",
     "react": "19.2.7",
@@ -31,6 +34,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.2",
+    "@types/leaflet": "^1.9.21",
     "@types/node": "26.1.0",
     "@types/pdfkit": "0.17.4",
     "@types/react": "19.2.17",

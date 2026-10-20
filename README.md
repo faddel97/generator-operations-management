@@ -24,6 +24,12 @@ The initial package is a representative four-cylinder diesel training assembly, 
 
 Validate with `npm run build` and `npm run lint`. The real-browser check is `node scripts/check-assembly-viewer.cjs` against a running server (default `http://localhost:3002`); set `ASSEMBLY_TEST_URL`, `PLAYWRIGHT_MODULE` and `CHROME_PATH` for the local environment. It checks orbit, zoom buttons, mouse wheel, touch pinch, isolation/reset, connections, walkthroughs, filtering and mobile overflow. An authenticated deployment needs an authenticated test context, or a separate demo preview with empty Supabase settings. Do not alter production authentication for testing.
 
+## Facility map and asset tracking
+
+Open **Live Tracking** at `/tracking`. The replacement uses the supplied original facility PDF as a tiled Leaflet map. Real mode reads registered GOM assets, tracking observations, and fuel readings. GPS fixes are not placed on the drawing until a surveyed image-to-GPS calibration is published; unverified road segments never produce operational directions. The separate fictional demo mode contains 100 assets and six repeatable stakeholder scenarios, with no writes to operational records.
+
+Apply the two 20261018 tracking migrations followed by `supabase/migrations/20261020_facility_map.sql` before using the new operational workflows. Site administrators must verify translations, parking zones, and road access. See `docs/facility-map/README.md` for data sources, limitations, and test instructions. `docs/gps-tracking-integration.md` documents the optional GPS ingestion endpoint; it requires a server-only service role key and approved device integration.
+
 ## Local Setup
 
 1. Install dependencies:
